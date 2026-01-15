@@ -1,0 +1,1229 @@
+/* ==================== 全局样式 ==================== */
+/* 通用选择器 - 重置所有元素的默认样式 */
+* {
+  margin: 0;              /* 清除所有元素的外边距 */
+  padding: 0;             /* 清除所有元素的内边距 */
+  box-sizing: border-box; /* 设置盒模型为边框盒模型，确保内边距和边框不会增加元素的总宽度 */
+}
+
+/* CSS 变量定义 - 默认主题 */
+:root {
+  /* 背景颜色变量 */
+  --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* 主背景 - 渐变紫色 */
+  --bg-secondary: rgba(255, 255, 255, 0.95); /* 次要背景 - 半透明白色 */
+
+  /* 文字颜色变量 */
+  --text-primary: #333;     /* 主要文字颜色 - 深灰色 */
+  --text-secondary: #666;   /* 次要文字颜色 - 中灰色 */
+
+  /* 边框和阴影变量 */
+  --border-color: #ddd;                 /* 边框颜色 - 浅灰色 */
+  --card-shadow: rgba(0, 0, 0, 0.1);  /* 卡片阴影 - 半透明黑色 */
+
+  /* 按钮颜色变量 */
+  --btn-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* 主按钮 - 渐变紫色 */
+  --btn-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); /* 次要按钮 - 渐变粉红色 */
+  --btn-tertiary: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); /* 第三按钮 - 渐变蓝色 */
+  --btn-success: #4caf50; /* 成功按钮 - 绿色 */
+  --btn-danger: #f44336;  /* 危险按钮 - 红色 */
+
+  /* 输入框颜色变量 */
+  --input-bg: white;      /* 输入框背景 - 白色 */
+  --input-border: #ddd;   /* 输入框边框 - 浅灰色 */
+
+  /* 悬停效果变量 */
+  --hover-bg: #f5f5f5; /* 悬停背景 - 浅灰色 */
+
+  /* 操作按钮样式变量 */
+  --action-btn-bg: #ffffff;       /* 操作按钮背景 - 白色 */
+  --action-btn-text: #333;        /* 操作按钮文字 - 深灰色 */
+  --action-btn-border: #e0e0e0;  /* 操作按钮边框 - 浅灰色 */
+
+  /* 毛玻璃模糊程度变量 */
+  --button-blur: 10px;    /* 按钮模糊程度 - 10像素 */
+  --card-blur: 20px;      /* 卡片模糊程度 - 20像素 */
+  --search-blur: 10px;    /* 搜索框模糊程度 - 10像素 */
+  --other-blur: 10px;     /* 其他元素模糊程度 - 10像素 */
+  --background-blur: 10px; /* 背景模糊程度 - 10像素 */
+
+  /* 背景透明度变量 */
+  --background-opacity: 100%; /* 背景透明度 - 100%不透明 */
+}
+
+/* ==================== 浅色主题 ==================== */
+body.light-theme {
+  /* 背景设置 - 使用浅色主题背景图片 */
+  --bg-primary: url('assets/background/light/Lundon_1.jpg');
+  --bg-secondary: transparent; /* 次要背景 - 透明，显示背景图片 */
+
+  /* 文字颜色 - 深色文字 */
+  --text-primary: #333;
+  --text-secondary: #666;
+
+  /* 边框和阴影 - 使用半透明白色 */
+  --border-color: rgba(255, 255, 255, 0.3);
+  --card-bg: transparent; /* 卡片背景 - 透明 */
+  --card-shadow: rgba(0, 0, 0, 0.15);
+
+  /* 按钮颜色 - 半透明白色 */
+  --btn-primary: rgba(255, 255, 255, 0.5);
+  --btn-secondary: rgba(255, 255, 255, 0.5);
+  --btn-tertiary: rgba(255, 255, 255, 0.5);
+  --btn-success: rgba(255, 255, 255, 0.5);
+  --btn-danger: rgba(255, 255, 255, 0.5);
+
+  /* 输入框颜色 - 半透明白色 */
+  --input-bg: rgba(255, 255, 255, 0.5);
+  --input-border: rgba(255, 255, 255, 0.3);
+
+  /* 悬停效果 - 更不透明的白色 */
+  --hover-bg: rgba(255, 255, 255, 0.6);
+
+  /* 操作按钮样式 - 半透明白色 */
+  --action-btn-bg: rgba(255, 255, 255, 0.5);
+  --action-btn-text: #333;
+  --action-btn-border: rgba(255, 255, 255, 0.4);
+}
+
+/* ==================== 深色主题 ==================== */
+body.dark-theme {
+  /* 背景设置 - 使用深色主题背景图片 */
+  --bg-primary: url('assets/background/night/Lundon_1.jpg');
+  --bg-secondary: transparent; /* 次要背景 - 透明，显示背景图片 */
+
+  /* 文字颜色 - 浅色文字 */
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+
+  /* 边框和阴影 - 使用半透明白色 */
+  --border-color: rgba(255, 255, 255, 0.2);
+  --card-bg: transparent; /* 卡片背景 - 透明 */
+  --card-shadow: rgba(0, 0, 0, 0.3);
+
+  /* 按钮颜色 - 半透明深色 */
+  --btn-primary: rgba(60, 60, 76, 0.5);
+  --btn-secondary: rgba(70, 70, 86, 0.5);
+  --btn-tertiary: rgba(80, 80, 96, 0.5);
+  --btn-success: rgba(61, 139, 64, 0.5);
+  --btn-danger: rgba(198, 40, 40, 0.5);
+
+  /* 输入框颜色 - 半透明深色 */
+  --input-bg: rgba(40, 40, 56, 0.5);
+  --input-border: rgba(255, 255, 255, 0.2);
+
+  /* 悬停效果 - 半透明白色 */
+  --hover-bg: rgba(255, 255, 255, 0.1);
+
+  /* 操作按钮样式 - 半透明深色 */
+  --action-btn-bg: rgba(60, 60, 76, 0.5);
+  --action-btn-text: #ffffff;
+  --action-btn-border: rgba(255, 255, 255, 0.3);
+}
+
+/* ==================== 自定义主题 ==================== */
+body.custom-theme {
+  /* 背景设置 - 不设置背景图片，由用户上传 */
+  /* --bg-primary: 由用户上传的图片决定 */
+
+  /* 次要背景 - 半透明白色 */
+  --bg-secondary: rgba(255, 255, 255, 0.7);
+
+  /* 卡片背景 - 半透明白色 */
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-shadow: rgba(0, 0, 0, 0.15);
+
+  /* 按钮颜色 - 半透明白色 */
+  --btn-primary: rgba(255, 255, 255, 0.6);
+  --btn-secondary: rgba(255, 255, 255, 0.6);
+  --btn-tertiary: rgba(255, 255, 255, 0.6);
+  --btn-success: rgba(255, 255, 255, 0.6);
+  --btn-danger: rgba(255, 255, 255, 0.6);
+
+  /* 输入框颜色 - 半透明白色 */
+  --input-bg: rgba(255, 255, 255, 0.6);
+  --input-border: rgba(255, 255, 255, 0.3);
+
+  /* 悬停效果 - 更不透明的白色 */
+  --hover-bg: rgba(255, 255, 255, 0.7);
+
+  /* 操作按钮样式 - 半透明白色 */
+  --action-btn-bg: rgba(255, 255, 255, 0.6);
+  --action-btn-text: #333;
+  --action-btn-border: rgba(255, 255, 255, 0.4);
+}
+
+/* 自定义主题 - 深色模式 */
+body.custom-theme.dark-theme {
+  /* 次要背景 - 半透明深色 */
+  --bg-secondary: rgba(30, 30, 46, 0.7);
+
+  /* 卡片背景 - 半透明深色 */
+  --card-bg: rgba(40, 40, 56, 0.85);
+
+  /* 按钮颜色 - 半透明深色 */
+  --btn-primary: rgba(60, 60, 76, 0.6);
+  --btn-secondary: rgba(70, 70, 86, 0.6);
+  --btn-tertiary: rgba(80, 80, 96, 0.6);
+  --btn-success: rgba(61, 139, 64, 0.6);
+  --btn-danger: rgba(198, 40, 40, 0.6);
+
+  /* 输入框颜色 - 半透明深色 */
+  --input-bg: rgba(40, 40, 56, 0.6);
+  --input-border: rgba(255, 255, 255, 0.2);
+
+  /* 悬停效果 - 半透明白色 */
+  --hover-bg: rgba(255, 255, 255, 0.1);
+
+  /* 操作按钮样式 - 半透明深色 */
+  --action-btn-bg: rgba(60, 60, 76, 0.6);
+  --action-btn-text: #ffffff;
+  --action-btn-border: rgba(255, 255, 255, 0.3);
+}
+
+/* ==================== 页面主体 ==================== */
+/* 页面主体样式 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif; /* 字体栈 - 使用系统默认字体 */
+  background: white;           /* 背景颜色 - 白色 */
+  color: var(--text-primary);  /* 文字颜色 - 使用主题变量 */
+  overflow: hidden;            /* 隐藏溢出内容 - 防止滚动条 */
+  margin: 0;                  /* 外边距 - 0 */
+  padding: 0;                 /* 内边距 - 0 */
+  height: 100vh;              /* 高度 - 占满视口高度 */
+  width: 100vw;               /* 宽度 - 占满视口宽度 */
+  transition: background 0.3s, color 0.3s; /* 过渡效果 - 背景和颜色变化时的动画 */
+}
+
+/* 背景层 - 用于显示背景图片和应用背景模糊效果 */
+#backgroundLayer {
+  position: fixed;              /* 定位方式 - 固定定位，不随页面滚动 */
+  top: 0;                      /* 顶部位置 - 0 */
+  left: 0;                     /* 左侧位置 - 0 */
+  width: 100%;                 /* 宽度 - 100% */
+  height: 100%;                /* 高度 - 100% */
+  z-index: -1;                 /* 层级 - -1，在最底层 */
+  background: var(--bg-primary); /* 背景图片 - 使用主题变量 */
+  background-size: cover;       /* 背景尺寸 - 覆盖整个容器 */
+  background-position: center;   /* 背景位置 - 居中 */
+  background-repeat: no-repeat;  /* 背景重复 - 不重复 */
+  transition: background 0.3s;  /* 过渡效果 - 背景变化时的动画 */
+  pointer-events: none;         /* 指针事件 - 不响应鼠标事件 */
+  image-rendering: -webkit-optimize-contrast; /* 图像渲染 - Webkit浏览器优化对比度 */
+  image-rendering: auto;        /* 图像渲染 - 自动 */
+  transform: translateZ(0);    /* 变换 - 开启GPU加速 */
+  will-change: transform;       /* 将要变化的属性 - 提示浏览器优化 */
+  backdrop-filter: blur(var(--background-blur)); /* 背景模糊 - 使用主题变量 */
+  -webkit-backdrop-filter: blur(var(--background-blur)); /* 背景模糊 - Safari浏览器支持 */
+  opacity: var(--background-opacity); /* 透明度 - 使用主题变量 */
+}
+
+/* 应用主容器 */
+#app {
+  position: relative;           /* 定位方式 - 相对定位 */
+  z-index: 1;                 /* 层级 - 1，在背景层之上 */
+  height: 100vh;              /* 高度 - 占满视口高度 */
+  display: flex;               /* 显示方式 - 弹性布局 */
+  flex-direction: column;       /* 弹性方向 - 垂直排列 */
+  background: transparent;     /* 背景 - 透明 */
+  transition: background 0.3s; /* 过渡效果 - 背景变化时的动画 */
+}
+
+/* ==================== 导航栏 ==================== */
+/* 顶部导航栏 */
+.navbar {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  justify-content: space-between; /* 主轴对齐 - 两端对齐 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  padding: 12px 24px;         /* 内边距 - 上下12px，左右24px */
+  background: var(--bg-secondary); /* 背景 - 使用主题变量 */
+  backdrop-filter: blur(var(--other-blur)); /* 背景模糊 - 使用主题变量 */
+  box-shadow: 0 2px 10px var(--card-shadow); /* 阴影 - 使用主题变量 */
+  transition: background 0.3s; /* 过渡效果 - 背景变化时的动画 */
+}
+
+/* 导航栏左侧区域 - 词书选择器 */
+.nav-left {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  gap: 16px;                  /* 间距 - 16px */
+}
+
+/* 词书选择器容器 */
+.wordbook-selector {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  gap: 12px;                  /* 间距 - 12px */
+}
+
+/* 词书封面图片 */
+.book-cover {
+  width: 40px;                /* 宽度 - 40px */
+  height: 40px;               /* 高度 - 40px */
+  border-radius: 6px;          /* 圆角 - 6px */
+  object-fit: cover;           /* 图片适应方式 - 覆盖 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* 阴影 - 半透明黑色 */
+}
+
+/* 词书下拉选择框 */
+.wordbook-dropdown {
+  padding: 8px 12px;          /* 内边距 - 上下8px，左右12px */
+  border: 1px solid var(--border-color); /* 边框 - 1px实线，使用主题变量 */
+  border-radius: 6px;          /* 圆角 - 6px */
+  font-size: 14px;             /* 字体大小 - 14px */
+  background: var(--input-bg); /* 背景 - 使用主题变量 */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  min-width: 200px;            /* 最小宽度 - 200px */
+  color: var(--text-primary);   /* 文字颜色 - 使用主题变量 */
+  transition: border-color 0.3s, background 0.3s; /* 过渡效果 - 边框和背景变化时的动画 */
+}
+
+.wordbook-dropdown:focus {
+  outline: none;              /* 轮廓 - 无 */
+  border-color: #667eea;      /* 边框颜色 - 紫色 */
+}
+
+/* ==================== 搜索框 ==================== */
+/* 搜索框容器 */
+.search-box {
+  position: relative;          /* 定位方式 - 相对定位 */
+  width: 100%;                /* 宽度 - 100% */
+  max-width: 500px;           /* 最大宽度 - 500px */
+  margin: 0 auto;             /* 外边距 - 上下0，左右自动（居中） */
+}
+
+/* 搜索图标 */
+.search-icon {
+  position: absolute;          /* 定位方式 - 绝对定位 */
+  left: 12px;                /* 左侧位置 - 12px */
+  top: 50%;                  /* 顶部位置 - 50% */
+  transform: translateY(-50%); /* 变换 - 向上移动50% */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+  pointer-events: none;        /* 指针事件 - 不响应鼠标事件 */
+}
+
+/* 搜索输入框 */
+.search-input {
+  width: 100%;                /* 宽度 - 100% */
+  padding: 10px 12px 10px 40px; /* 内边距 - 上10px，右12px，下10px，左40px（为图标留出空间） */
+  border: 1px solid var(--border-color); /* 边框 - 1px实线，使用主题变量 */
+  border-radius: 8px;         /* 圆角 - 8px */
+  font-size: 14px;            /* 字体大小 - 14px */
+  background: var(--input-bg);  /* 背景 - 使用主题变量 */
+  color: var(--text-primary);   /* 文字颜色 - 使用主题变量 */
+  transition: border-color 0.3s, background 0.3s; /* 过渡效果 - 边框和背景变化时的动画 */
+}
+
+/* 搜索按钮 */
+.search-button {
+  position: absolute;          /* 定位方式 - 绝对定位 */
+  right: 8px;                /* 右侧位置 - 8px */
+  top: 50%;                  /* 顶部位置 - 50% */
+  transform: translateY(-50%); /* 变换 - 向上移动50% */
+  padding: 6px 16px;         /* 内边距 - 上下6px，左右16px */
+  background: var(--btn-primary); /* 背景 - 使用主题变量 */
+  color: var(--text-primary);  /* 文字颜色 - 使用主题变量 */
+  border: none;               /* 边框 - 无 */
+  border-radius: 6px;          /* 圆角 - 6px */
+  font-size: 14px;            /* 字体大小 - 14px */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  transition: all 0.3s;       /* 过渡效果 - 所有属性变化时的动画 */
+}
+
+.search-button:hover {
+  opacity: 0.9;              /* 透明度 - 0.9 */
+  transform: translateY(-50%) scale(1.05); /* 变换 - 向上移动50%并放大1.05倍 */
+}
+
+.search-input:focus {
+  outline: none;              /* 轮廓 - 无 */
+  border-color: #667eea;      /* 边框颜色 - 紫色 */
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary); /* 占位符颜色 - 使用主题变量 */
+}
+
+/* 搜索结果下拉框 */
+.search-results {
+  position: absolute;          /* 定位方式 - 绝对定位 */
+  top: 100%;                  /* 顶部位置 - 100%（在输入框下方） */
+  left: 0;                    /* 左侧位置 - 0 */
+  right: 0;                   /* 右侧位置 - 0 */
+  margin-top: 4px;            /* 上外边距 - 4px */
+  background: var(--card-bg);  /* 背景 - 使用主题变量 */
+  border: 1px solid var(--border-color); /* 边框 - 1px实线，使用主题变量 */
+  border-radius: 6px;         /* 圆角 - 6px */
+  box-shadow: 0 4px 12px var(--card-shadow); /* 阴影 - 使用主题变量 */
+  max-height: 300px;          /* 最大高度 - 300px */
+  overflow-y: auto;            /* 垂直溢出 - 自动显示滚动条 */
+  z-index: 1000;             /* 层级 - 1000，在最上层 */
+  display: none;              /* 显示方式 - 不显示（默认隐藏） */
+  backdrop-filter: blur(var(--search-blur)); /* 背景模糊 - 使用主题变量 */
+  -webkit-backdrop-filter: blur(var(--search-blur)); /* 背景模糊 - Safari浏览器支持 */
+}
+
+/* 搜索结果项 */
+.search-result-item {
+  padding: 10px 12px;         /* 内边距 - 上下10px，左右12px */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  border-bottom: 1px solid var(--border-color); /* 下边框 - 1px实线，使用主题变量 */
+  transition: background 0.2s; /* 过渡效果 - 背景变化时的动画 */
+}
+
+.search-result-item:last-child {
+  border-bottom: none;          /* 下边框 - 无（最后一项） */
+}
+
+.search-result-item:hover {
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+}
+
+/* 搜索结果中的单词 */
+.search-word {
+  font-size: 15px;            /* 字体大小 - 15px */
+  font-weight: 600;            /* 字体粗细 - 600（半粗体） */
+  color: var(--text-primary);   /* 颜色 - 使用主题变量 */
+  margin-bottom: 4px;          /* 下外边距 - 4px */
+}
+
+/* 搜索结果中的解释 */
+.search-explain {
+  font-size: 13px;            /* 字体大小 - 13px */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+}
+
+/* 无搜索结果提示 */
+.search-no-result {
+  padding: 12px;              /* 内边距 - 12px */
+  text-align: center;          /* 文本对齐 - 居中 */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+  font-size: 14px;            /* 字体大小 - 14px */
+}
+
+/* 搜索框外层容器 */
+.search-container {
+  padding: 16px 24px;         /* 内边距 - 上下16px，左右24px */
+  margin-bottom: 16px;         /* 下外边距 - 16px */
+}
+
+/* 首页搜索框样式 */
+#homePage .search-container {
+  padding: 24px;              /* 内边距 - 24px */
+  margin-bottom: 32px;         /* 下外边距 - 32px */
+}
+
+#homePage .search-box {
+  max-width: 600px;           /* 最大宽度 - 600px */
+}
+
+/* ==================== 导航栏右侧区域 ==================== */
+/* 导航栏右侧容器 */
+.nav-right {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  gap: 16px;                  /* 间距 - 16px */
+}
+
+/* 同步状态显示 */
+.sync-status {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  gap: 6px;                   /* 间距 - 6px */
+  font-size: 13px;            /* 字体大小 - 13px */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+}
+
+/* 状态指示点 */
+.status-dot {
+  width: 8px;                 /* 宽度 - 8px */
+  height: 8px;                /* 高度 - 8px */
+  border-radius: 50%;          /* 圆角 - 50%（圆形） */
+  animation: pulse 2s infinite; /* 动画 - 脉冲动画，2秒循环 */
+}
+
+/* 绿色状态点 - 已同步 */
+.status-dot.green {
+  background: #4caf50;         /* 背景 - 绿色 */
+}
+
+/* 黄色状态点 - 同步中 */
+.status-dot.yellow {
+  background: #ffc107;         /* 背景 - 黄色 */
+}
+
+/* 红色状态点 - 同步失败 */
+.status-dot.red {
+  background: #f44336;        /* 背景 - 红色 */
+}
+
+/* 脉冲动画关键帧 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;               /* 透明度 - 1（完全不透明） */
+  }
+  50% {
+    opacity: 0.5;             /* 透明度 - 0.5（半透明） */
+  }
+}
+
+/* 设置按钮 - 导航栏右侧的齿轮图标按钮 */
+.settings-btn {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  border: 2px solid var(--action-btn-border); /* 边框 - 2px实线，使用主题变量 */
+  padding: 8px;               /* 内边距 - 8px */
+  border-radius: 50%;          /* 圆角 - 50%（圆形） */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  transition: background 0.3s, border-color 0.3s; /* 过渡效果 - 背景和边框变化时的动画 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+}
+
+.settings-btn:hover {
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  border-color: var(--border-color); /* 边框颜色 - 使用主题变量 */
+  transform: rotate(90deg);    /* 变换 - 旋转90度 */
+}
+
+/* ==================== 主内容区域 ==================== */
+/* 主内容容器 */
+.main-content {
+  flex: 1;                    /* 弹性系数 - 1（占据剩余空间） */
+  overflow: hidden;            /* 溢出 - 隐藏 */
+  position: relative;          /* 定位方式 - 相对定位 */
+}
+
+/* 页面容器 */
+.page {
+  display: none;               /* 显示方式 - 不显示（默认隐藏） */
+  height: 100%;               /* 高度 - 100% */
+  padding: 24px;              /* 内边距 - 24px */
+  overflow-y: auto;           /* 垂直溢出 - 自动显示滚动条 */
+  position: relative;          /* 定位方式 - 相对定位 */
+  z-index: 1;                 /* 层级 - 1 */
+}
+
+/* 激活的页面 */
+.page.active {
+  display: block;             /* 显示方式 - 块级元素（显示） */
+}
+
+/* 页面标题 */
+.page-title {
+  text-align: center;          /* 文本对齐 - 居中 */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+  font-size: 32px;            /* 字体大小 - 32px */
+  margin-bottom: 48px;         /* 下外边距 - 48px */
+  text-shadow: 0 2px 10px var(--card-shadow); /* 文字阴影 - 使用主题变量 */
+}
+
+/* ==================== 首页操作按钮 ==================== */
+/* 操作按钮容器 - 学习、复习、单词总览等按钮 */
+.action-buttons {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  flex-direction: column;       /* 弹性方向 - 垂直排列 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  gap: 24px;                  /* 间距 - 24px */
+  max-width: 400px;           /* 最大宽度 - 400px */
+  margin: 0 auto;             /* 外边距 - 上下0，左右自动（居中） */
+}
+
+/* 操作按钮 - 学习、复习、单词总览、创建词书按钮 */
+.action-btn {
+  width: 100%;                /* 宽度 - 100% */
+  padding: 16px;              /* 内边距 - 16px */
+  border: 2px solid var(--action-btn-border); /* 边框 - 2px实线，使用主题变量 */
+  border-radius: 16px;         /* 圆角 - 16px */
+  font-size: 16px;            /* 字体大小 - 16px */
+  font-weight: 600;           /* 字体粗细 - 600（半粗体） */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  transition: all 0.3s;       /* 过渡效果 - 所有属性变化时的动画 */
+  display: flex;              /* 显示方式 - 弹性布局 */
+  flex-direction: column;       /* 弹性方向 - 垂直排列 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  gap: 8px;                  /* 间距 - 8px */
+  box-shadow: 0 4px 20px var(--card-shadow); /* 阴影 - 使用主题变量 */
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+  backdrop-filter: blur(var(--button-blur)); /* 背景模糊 - 使用主题变量 */
+  -webkit-backdrop-filter: blur(var(--button-blur)); /* 背景模糊 - Safari浏览器支持 */
+}
+
+.action-btn:hover {
+  transform: scale(1.05);     /* 变换 - 放大1.05倍 */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  border-color: var(--border-color); /* 边框颜色 - 使用主题变量 */
+}
+
+/* 学习按钮 */
+.action-btn.primary {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+}
+
+/* 复习按钮 */
+.action-btn.secondary {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+}
+
+/* 单词总览按钮 */
+.action-btn.tertiary {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+}
+
+/* ==================== 页面头部 ==================== */
+/* 页面头部 - 包含返回按钮、标题和进度信息 */
+.page-header {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  gap: 16px;                  /* 间距 - 16px */
+  margin-bottom: 24px;         /* 下外边距 - 24px */
+  background: var(--card-bg);  /* 背景 - 使用主题变量 */
+  padding: 16px 24px;         /* 内边距 - 上下16px，左右24px */
+  border-radius: 12px;         /* 圆角 - 12px */
+  box-shadow: 0 2px 10px var(--card-shadow); /* 阴影 - 使用主题变量 */
+  transition: background 0.3s; /* 过渡效果 - 背景变化时的动画 */
+}
+
+/* 返回按钮 - 学习页面、复习页面、设置页面的返回按钮 */
+.back-btn {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  border: 2px solid var(--action-btn-border); /* 边框 - 2px实线，使用主题变量 */
+  padding: 8px 16px;          /* 内边距 - 上下8px，左右16px */
+  border-radius: 6px;          /* 圆角 - 6px */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  font-size: 14px;            /* 字体大小 - 14px */
+  transition: all 0.3s;       /* 过渡效果 - 所有属性变化时的动画 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+}
+
+.back-btn:hover {
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  border-color: var(--border-color); /* 边框颜色 - 使用主题变量 */
+  transform: translateY(-2px);  /* 变换 - 向上移动2px */
+}
+
+/* 页面标题 */
+.page-header h2 {
+  flex: 1;                    /* 弹性系数 - 1（占据剩余空间） */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+}
+
+/* 进度信息显示 */
+.progress-info {
+  font-size: 14px;            /* 字体大小 - 14px */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+  font-weight: 500;           /* 字体粗细 - 500（中等） */
+}
+
+/* ==================== 学习/复习/总览页面内容 ==================== */
+/* 学习内容容器 - 学习页面 */
+.learn-content,
+/* 复习内容容器 - 复习页面 */
+.review-content,
+/* 总览标签栏 - 单词总览页面 */
+.overview-tabs {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  gap: 8px;                  /* 间距 - 8px */
+  margin-bottom: 16px;         /* 下外边距 - 16px */
+  padding: 0 24px;            /* 内边距 - 上下0，左右24px */
+}
+
+/* 学习内容容器 - 居中显示卡片 */
+.learn-content {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  flex-direction: column;       /* 弹性方向 - 垂直排列 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  justify-content: center;      /* 主轴对齐 - 居中对齐 */
+  min-height: calc(100vh - 200px); /* 最小高度 - 视口高度减去200px */
+}
+
+/* 标签按钮 - 单词总览页面的"学习中"、"已掌握"、"新词"标签 */
+.tab-btn {
+  flex: 1;                    /* 弹性系数 - 1（平均分配空间） */
+  padding: 12px 16px;         /* 内边距 - 上下12px，左右16px */
+  background: var(--card-bg);  /* 背景 - 使用主题变量 */
+  border: 1px solid var(--border-color); /* 边框 - 1px实线，使用主题变量 */
+  border-radius: 8px;          /* 圆角 - 8px */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  font-size: 14px;            /* 字体大小 - 14px */
+  font-weight: 500;           /* 字体粗细 - 500（中等） */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+  transition: all 0.3s;       /* 过渡效果 - 所有属性变化时的动画 */
+  backdrop-filter: blur(var(--other-blur)); /* 背景模糊 - 使用主题变量 */
+  -webkit-backdrop-filter: blur(var(--other-blur)); /* 背景模糊 - Safari浏览器支持 */
+}
+
+.tab-btn:hover {
+  background: var(--btn-hover); /* 背景 - 使用主题变量 */
+  color: var(--text-primary);   /* 颜色 - 使用主题变量 */
+}
+
+/* 激活的标签按钮 */
+.tab-btn.active {
+  background: var(--btn-primary); /* 背景 - 使用主题变量 */
+  color: var(--text-primary);   /* 颜色 - 使用主题变量 */
+  border-color: var(--btn-primary); /* 边框颜色 - 使用主题变量 */
+}
+
+/* 总览内容区域 - 单词总览页面的单词列表容器 */
+.overview-content {
+  background: var(--card-bg);  /* 背景 - 使用主题变量 */
+  border-radius: 12px;         /* 圆角 - 12px */
+  padding: 24px;              /* 内边距 - 24px */
+  box-shadow: 0 2px 10px var(--card-shadow); /* 阴影 - 使用主题变量 */
+  min-height: 400px;          /* 最小高度 - 400px */
+  transition: background 0.3s; /* 过渡效果 - 背景变化时的动画 */
+  position: relative;          /* 定位方式 - 相对定位 */
+  z-index: 1;                 /* 层级 - 1 */
+}
+
+/* ==================== 学习卡片 ==================== */
+/* 单词卡片 - 学习页面显示的单词卡片 */
+.word-card {
+  text-align: center;          /* 文本对齐 - 居中 */
+  padding: 40px;              /* 内边距 - 40px */
+  position: relative;          /* 定位方式 - 相对定位 */
+  z-index: 5;                 /* 层级 - 5 */
+  background: rgba(255, 255, 255, 0.7); /* 背景 - 半透明白色 */
+  border-radius: 12px;         /* 圆角 - 12px */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* 阴影 - 半透明黑色 */
+}
+
+/* 深色主题下的单词卡片 */
+body.dark-theme .word-card {
+  background: rgba(60, 60, 76, 0.7); /* 背景 - 半透明深色 */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); /* 阴影 - 半透明黑色 */
+}
+
+/* 单词文本 */
+.word-card .word {
+  font-size: 48px;            /* 字体大小 - 48px */
+  font-weight: 700;           /* 字体粗细 - 700（粗体） */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+  margin-bottom: 16px;         /* 下外边距 - 16px */
+}
+
+/* 音标文本 */
+.word-card .phonetic {
+  font-size: 20px;            /* 字体大小 - 20px */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+  margin-bottom: 24px;         /* 下外边距 - 24px */
+}
+
+/* 音频按钮容器 */
+.word-card .audio-buttons {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  justify-content: center;      /* 主轴对齐 - 居中对齐 */
+  gap: 16px;                  /* 间距 - 16px */
+  margin-bottom: 32px;         /* 下外边距 - 32px */
+}
+
+/* 音频按钮 - 英式发音、美式发音按钮 */
+.audio-btn {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  border: 2px solid var(--action-btn-border); /* 边框 - 2px实线，使用主题变量 */
+  padding: 12px 24px;         /* 内边距 - 上下12px，左右24px */
+  border-radius: 8px;          /* 圆角 - 8px */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  font-size: 14px;            /* 字体大小 - 14px */
+  display: flex;              /* 显示方式 - 弹性布局 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  gap: 8px;                  /* 间距 - 8px */
+  transition: transform 0.3s, background 0.3s, border-color 0.3s; /* 过渡效果 - 变换、背景和边框变化时的动画 */
+}
+
+.audio-btn:hover {
+  transform: scale(1.05);     /* 变换 - 放大1.05倍 */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  border-color: var(--border-color); /* 边框颜色 - 使用主题变量 */
+}
+
+/* 单词释义 */
+.word-card .definition {
+  font-size: 24px;            /* 字体大小 - 24px */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+  margin-bottom: 24px;         /* 下外边距 - 24px */
+}
+
+/* 例句文本 */
+.word-card .example {
+  font-size: 16px;            /* 字体大小 - 16px */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+  font-style: italic;          /* 字体样式 - 斜体 */
+  margin-bottom: 32px;         /* 下外边距 - 32px */
+}
+
+/* 输入区域容器 */
+.word-card .input-area {
+  margin-bottom: 24px;         /* 下外边距 - 24px */
+  position: relative;          /* 定位方式 - 相对定位 */
+  z-index: 10;                /* 层级 - 10 */
+}
+
+/* 单词输入框 - 学习页面用户输入单词的输入框 */
+.word-card input[type="text"] {
+  width: 100%;                /* 宽度 - 100% */
+  max-width: 400px;           /* 最大宽度 - 400px */
+  padding: 16px;              /* 内边距 - 16px */
+  font-size: 20px;            /* 字体大小 - 20px */
+  border: 2px solid var(--input-border); /* 边框 - 2px实线，使用主题变量 */
+  border-radius: 8px;          /* 圆角 - 8px */
+  text-align: center;          /* 文本对齐 - 居中 */
+  background: var(--input-bg); /* 背景 - 使用主题变量 */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+  transition: border-color 0.3s, background 0.3s, color 0.3s; /* 过渡效果 - 边框、背景和颜色变化时的动画 */
+  position: relative;          /* 定位方式 - 相对定位 */
+  z-index: 10;                /* 层级 - 10 */
+}
+
+.word-card input[type="text"]:focus {
+  outline: none;              /* 轮廓 - 无 */
+  border-color: #667eea;      /* 边框颜色 - 紫色 */
+}
+
+/* 选项按钮容器 - 四选一选择题的选项 */
+.word-card .options {
+  display: grid;              /* 显示方式 - 网格布局 */
+  grid-template-columns: repeat(2, 1fr); /* 网格列 - 2列，每列等宽 */
+  gap: 16px;                  /* 间距 - 16px */
+  max-width: 600px;           /* 最大宽度 - 600px */
+  margin: 0 auto 32px;       /* 外边距 - 上下0，左右自动（居中），下32px */
+}
+
+/* 选项按钮 - 四选一选择题的选项按钮 */
+.option-btn {
+  padding: 20px;              /* 内边距 - 20px */
+  border: 2px solid var(--border-color); /* 边框 - 2px实线，使用主题变量 */
+  border-radius: 8px;          /* 圆角 - 8px */
+  background: var(--card-bg);  /* 背景 - 使用主题变量 */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  font-size: 18px;            /* 字体大小 - 18px */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+  transition: all 0.3s;       /* 过渡效果 - 所有属性变化时的动画 */
+}
+
+.option-btn:hover {
+  border-color: #667eea;      /* 边框颜色 - 紫色 */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+}
+
+/* 选中的选项按钮 */
+.option-btn.selected {
+  border-color: #667eea;      /* 边框颜色 - 紫色 */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+}
+
+/* 正确的选项按钮 */
+.option-btn.correct {
+  border-color: var(--btn-success); /* 边框颜色 - 使用主题变量 */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+}
+
+/* 错误的选项按钮 */
+.option-btn.wrong {
+  border-color: var(--btn-danger); /* 边框颜色 - 使用主题变量 */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+}
+
+/* 学习卡片底部的操作按钮容器 */
+.word-card .action-buttons {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  justify-content: center;      /* 主轴对齐 - 居中对齐 */
+  gap: 16px;                  /* 间距 - 16px */
+  margin-top: 24px;           /* 上外边距 - 24px */
+}
+
+/* ==================== 提交和下一步按钮 ==================== */
+/* 提交按钮 - 学习页面的提交答案按钮 */
+.submit-btn,
+/* 下一步按钮 - 学习页面的下一个单词按钮 */
+.next-btn {
+  padding: 12px 32px;         /* 内边距 - 上下12px，左右32px */
+  border: 2px solid var(--action-btn-border); /* 边框 - 2px实线，使用主题变量 */
+  border-radius: 8px;          /* 圆角 - 8px */
+  font-size: 16px;            /* 字体大小 - 16px */
+  font-weight: 600;           /* 字体粗细 - 600（半粗体） */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  transition: all 0.3s;       /* 过渡效果 - 所有属性变化时的动画 */
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+  position: relative;          /* 定位方式 - 相对定位 */
+  z-index: 1002;              /* 层级 - 1002 */
+}
+
+.submit-btn:hover,
+.next-btn:hover {
+  transform: scale(1.05);     /* 变换 - 放大1.05倍 */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  border-color: var(--border-color); /* 边框颜色 - 使用主题变量 */
+}
+
+.submit-btn {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+}
+
+.next-btn {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+}
+
+/* 取消按钮 - 弹窗中的取消按钮 */
+.submit-btn.btn-cancel {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+  opacity: 0.7;               /* 透明度 - 0.7 */
+}
+
+/* 危险按钮 - 重置数据库按钮 */
+.submit-btn.btn-danger {
+  background: var(--btn-danger); /* 背景 - 使用主题变量 */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+  border-color: var(--btn-danger); /* 边框颜色 - 使用主题变量 */
+}
+
+.submit-btn.btn-danger:hover {
+  opacity: 0.9;               /* 透明度 - 0.9 */
+  background: var(--btn-danger); /* 背景 - 使用主题变量 */
+}
+
+/* ==================== 弹窗 ==================== */
+/* 弹窗遮罩层 */
+.modal {
+  display: none;               /* 显示方式 - 不显示（默认隐藏） */
+  position: fixed;            /* 定位方式 - 固定定位 */
+  top: 0;                    /* 顶部位置 - 0 */
+  left: 0;                   /* 左侧位置 - 0 */
+  width: 100%;                /* 宽度 - 100% */
+  height: 100%;               /* 高度 - 100% */
+  background: rgba(0, 0, 0, 0.5); /* 背景 - 半透明黑色 */
+  z-index: 1000;             /* 层级 - 1000，在最上层 */
+  justify-content: center;      /* 主轴对齐 - 居中对齐 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+}
+
+/* 激活的弹窗 */
+.modal.active {
+  display: flex;              /* 显示方式 - 弹性布局（显示） */
+}
+
+/* 弹窗内容容器 */
+.modal-content {
+  background: var(--card-bg);  /* 背景 - 使用主题变量 */
+  border-radius: 12px;         /* 圆角 - 12px */
+  width: 90%;                 /* 宽度 - 90% */
+  max-width: 600px;           /* 最大宽度 - 600px */
+  max-height: 80vh;           /* 最大高度 - 视口高度的80% */
+  overflow-y: auto;           /* 垂直溢出 - 自动显示滚动条 */
+  transition: background 0.3s; /* 过渡效果 - 背景变化时的动画 */
+  position: relative;          /* 定位方式 - 相对定位 */
+  z-index: 1001;              /* 层级 - 1001 */
+  backdrop-filter: blur(var(--card-blur)); /* 背景模糊 - 使用主题变量 */
+  -webkit-backdrop-filter: blur(var(--card-blur)); /* 背景模糊 - Safari浏览器支持 */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); /* 阴影 - 半透明黑色 */
+}
+
+/* 弹窗头部 */
+.modal-header {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  justify-content: space-between; /* 主轴对齐 - 两端对齐 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  padding: 20px 24px;         /* 内边距 - 上下20px，左右24px */
+  border-bottom: 1px solid var(--border-color); /* 下边框 - 1px实线，使用主题变量 */
+  transition: border-color 0.3s; /* 过渡效果 - 边框变化时的动画 */
+}
+
+/* 弹窗标题 */
+.modal-header h2 {
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+}
+
+/* 关闭按钮 - 弹窗右上角的X按钮 */
+.close-btn {
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  border: 2px solid var(--action-btn-border); /* 边框 - 2px实线，使用主题变量 */
+  font-size: 28px;            /* 字体大小 - 28px */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+  transition: color 0.3s, background 0.3s, border-color 0.3s; /* 过渡效果 - 颜色、背景和边框变化时的动画 */
+  border-radius: 6px;          /* 圆角 - 6px */
+  width: 36px;                /* 宽度 - 36px */
+  height: 36px;               /* 高度 - 36px */
+  display: flex;              /* 显示方式 - 弹性布局 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  justify-content: center;      /* 主轴对齐 - 居中对齐 */
+}
+
+.close-btn:hover {
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  border-color: var(--border-color); /* 边框颜色 - 使用主题变量 */
+  transform: rotate(90deg);    /* 变换 - 旋转90度 */
+}
+
+/* 弹窗主体内容 */
+.modal-body {
+  padding: 24px;              /* 内边距 - 24px */
+}
+
+/* ==================== 设置页面 ==================== */
+/* 设置分组 */
+.setting-section {
+  margin-bottom: 24px;         /* 下外边距 - 24px */
+}
+
+/* 设置分组标题 */
+.setting-section h3 {
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+  margin-bottom: 16px;         /* 下外边距 - 16px */
+}
+
+/* 主题选项容器 */
+.theme-options {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  gap: 12px;                  /* 间距 - 12px */
+  margin-bottom: 16px;         /* 下外边距 - 16px */
+}
+
+/* 主题按钮 - 浅色、深色、自定义主题按钮 */
+.theme-btn {
+  padding: 12px 16px;         /* 内边距 - 上下12px，左右16px */
+  border: 2px solid var(--action-btn-border); /* 边框 - 2px实线，使用主题变量 */
+  border-radius: 8px;          /* 圆角 - 8px */
+  background: var(--action-btn-bg); /* 背景 - 使用主题变量 */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  font-size: 14px;            /* 字体大小 - 14px */
+  color: var(--action-btn-text); /* 颜色 - 使用主题变量 */
+  transition: all 0.3s;       /* 过渡效果 - 所有属性变化时的动画 */
+  display: flex;              /* 显示方式 - 弹性布局 */
+  flex-direction: column;       /* 弹性方向 - 垂直排列 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  gap: 8px;                  /* 间距 - 8px */
+  min-width: 100px;           /* 最小宽度 - 100px */
+}
+
+/* 主题预览图 */
+.theme-preview {
+  width: 80px;               /* 宽度 - 80px */
+  height: 60px;              /* 高度 - 60px */
+  border-radius: 6px;        /* 圆角 - 6px */
+  background-size: cover;     /* 背景大小 - 覆盖整个元素 */
+  background-position: center; /* 背景位置 - 居中 */
+  background-repeat: no-repeat; /* 背景重复 - 不重复 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* 阴影 - 半透明黑色 */
+  transition: transform 0.3s; /* 过渡效果 - 变换变化时的动画 */
+}
+
+/* 自定义主题预览图 */
+.theme-preview.custom-preview {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* 背景 - 渐变紫色 */
+  display: flex;              /* 显示方式 - 弹性布局 */
+  align-items: center;         /* 交叉轴对齐 - 居中对齐 */
+  justify-content: center;      /* 主轴对齐 - 居中对齐 */
+}
+
+.theme-preview.custom-preview svg {
+  color: white;              /* 颜色 - 白色 */
+}
+
+.theme-btn:hover .theme-preview {
+  transform: scale(1.05);    /* 变换 - 放大1.05倍 */
+}
+
+.theme-btn:hover {
+  border-color: var(--border-color); /* 边框颜色 - 使用主题变量 */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  transform: translateY(-2px);  /* 变换 - 向上移动2px */
+}
+
+/* 激活的主题按钮 */
+.theme-btn.active {
+  border-color: var(--border-color); /* 边框颜色 - 使用主题变量 */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* 阴影 - 更明显的阴影 */
+}
+
+/* 自定义主题设置区域 */
+.custom-theme-section {
+  margin-top: 16px;           /* 上外边距 - 16px */
+  padding: 16px;              /* 内边距 - 16px */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  border-radius: 8px;          /* 圆角 - 8px */
+  transition: background 0.3s; /* 过渡效果 - 背景变化时的动画 */
+}
+
+/* 自定义主题输入框 */
+.custom-theme-section input {
+  width: 100%;                /* 宽度 - 100% */
+  padding: 10px;              /* 内边距 - 10px */
+  margin-bottom: 12px;         /* 下外边距 - 12px */
+  border: 1px solid var(--border-color); /* 边框 - 1px实线，使用主题变量 */
+  border-radius: 6px;          /* 圆角 - 6px */
+  background: var(--input-bg); /* 背景 - 使用主题变量 */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+}
+
+/* 自定义主题标签 */
+.custom-theme-section label {
+  display: block;             /* 显示方式 - 块级元素 */
+  margin-bottom: 8px;         /* 下外边距 - 8px */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+  font-size: 14px;            /* 字体大小 - 14px */
+}
+
+/* 自定义主题滑块 */
+.custom-theme-section input[type="range"] {
+  width: 100%;                /* 宽度 - 100% */
+  height: 6px;                /* 高度 - 6px */
+  background: var(--border-color); /* 背景 - 使用主题变量 */
+  border-radius: 3px;          /* 圆角 - 3px */
+  outline: none;              /* 轮廓 - 无 */
+  -webkit-appearance: none;    /* Webkit外观 - 无（自定义样式） */
+  appearance: none;           /* 外观 - 无（自定义样式） */
+}
+
+/* 自定义主题滑块滑块头 - Webkit */
+.custom-theme-section input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;    /* Webkit外观 - 无（自定义样式） */
+  appearance: none;           /* 外观 - 无（自定义样式） */
+  width: 18px;                /* 宽度 - 18px */
+  height: 18px;               /* 高度 - 18px */
+  background: #667eea;         /* 背景 - 紫色 */
+  border-radius: 50%;          /* 圆角 - 50%（圆形） */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  transition: background 0.3s; /* 过渡效果 - 背景变化时的动画 */
+}
+
+.custom-theme-section input[type="range"]::-webkit-slider-thumb:hover {
+  background: #764ba2;         /* 背景 - 深紫色 */
+}
+
+/* 自定义主题滑块滑块头 - Firefox */
+.custom-theme-section input[type="range"]::-moz-range-thumb {
+  width: 18px;                /* 宽度 - 18px */
+  height: 18px;               /* 高度 - 18px */
+  background: #667eea;         /* 背景 - 紫色 */
+  border-radius: 50%;          /* 圆角 - 50%（圆形） */
+  cursor: pointer;             /* 鼠标样式 - 指针 */
+  border: none;               /* 边框 - 无 */
+  transition: background 0.3s; /* 过渡效果 - 背景变化时的动画 */
+}
+
+.custom-theme-section input[type="range"]::-moz-range-thumb:hover {
+  background: #764ba2;         /* 背景 - 深紫色 */
+}
+
+/* ==================== 单词列表 ==================== */
+/* 单词列表容器 - 单词总览页面的单词网格 */
+.word-list {
+  display: grid;              /* 显示方式 - 网格布局 */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 网格列 - 自动填充，每列最小300px，等宽 */
+  gap: 16px;                  /* 间距 - 16px */
+}
+
+/* 单词项 - 单词总览页面中的单个单词卡片 */
+.word-item {
+  padding: 16px;              /* 内边距 - 16px */
+  border: 1px solid var(--border-color); /* 边框 - 1px实线，使用主题变量 */
+  border-radius: 8px;          /* 圆角 - 8px */
+  background: var(--card-bg);  /* 背景 - 使用主题变量 */
+  backdrop-filter: blur(var(--card-blur)); /* 背景模糊 - 使用主题变量 */
+  -webkit-backdrop-filter: blur(var(--card-blur)); /* 背景模糊 - Safari浏览器支持 */
+  transition: all 0.3s;       /* 过渡效果 - 所有属性变化时的动画 */
+}
+
+.word-item:hover {
+  box-shadow: 0 2px 8px var(--card-shadow); /* 阴影 - 使用主题变量 */
+}
+
+/* 单词项中的单词 */
+.word-item .word {
+  font-size: 20px;            /* 字体大小 - 20px */
+  font-weight: 600;           /* 字体粗细 - 600（半粗体） */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+  margin-bottom: 8px;          /* 下外边距 - 8px */
+}
+
+/* 单词项中的释义 */
+.word-item .definition {
+  font-size: 14px;            /* 字体大小 - 14px */
+  color: var(--text-secondary); /* 颜色 - 使用主题变量 */
+  margin-bottom: 12px;         /* 下外边距 - 12px */
+}
+
+/* 单词状态标签 */
+.word-item .status {
+  display: inline-block;       /* 显示方式 - 行内块级元素 */
+  padding: 4px 12px;          /* 内边距 - 上下4px，左右12px */
+  border-radius: 12px;         /* 圆角 - 12px */
+  font-size: 12px;            /* 字体大小 - 12px */
+  font-weight: 500;           /* 字体粗细 - 500（中等） */
+}
+
+/* 已掌握状态 */
+.word-item .status.mastered {
+  background: var(--btn-success); /* 背景 - 使用主题变量 */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+}
+
+/* 学习中状态 */
+.word-item .status.learning {
+  background: #ff9800;         /* 背景 - 橙色 */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+}
+
+/* 新词状态 */
+.word-item .status.new {
+  background: #2196f3;         /* 背景 - 蓝色 */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+}
+
+/* ==================== 筛选栏 ==================== */
+/* 筛选栏 - 单词总览页面的搜索和筛选工具栏 */
+.filter-bar {
+  display: flex;               /* 显示方式 - 弹性布局 */
+  gap: 12px;                  /* 间距 - 12px */
+  margin-bottom: 24px;         /* 下外边距 - 24px */
+  padding: 16px;              /* 内边距 - 16px */
+  background: var(--hover-bg); /* 背景 - 使用主题变量 */
+  border-radius: 8px;          /* 圆角 - 8px */
+}
+
+/* 筛选栏输入框和下拉框 */
+.filter-bar input,
+.filter-bar select {
+  padding: 8px 12px;          /* 内边距 - 上下8px，左右12px */
+  border: 1px solid var(--border-color); /* 边框 - 1px实线，使用主题变量 */
+  border-radius: 6px;          /* 圆角 - 6px */
+  font-size: 14px;            /* 字体大小 - 14px */
+  background: var(--input-bg); /* 背景 - 使用主题变量 */
+  color: var(--text-primary);  /* 颜色 - 使用主题变量 */
+  transition: border-color 0.3s, background 0.3s, color 0.3s; /* 过渡效果 - 边框、背景和颜色变化时的动画 */
+}
+
+.filter-bar input:focus,
+.filter-bar select:focus {
+  outline: none;              /* 轮廓 - 无 */
+  border-color: #667eea;      /* 边框颜色 - 紫色 */
+}
+
+.filter-bar input {
+  flex: 1;                    /* 弹性系数 - 1（占据剩余空间） */
+}
+
+/* ==================== 统计卡片 ==================== */
+/* 统计摘要容器 */
+.stats-summary {
+  display: grid;              /* 显示方式 - 网格布局 */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* 网格列 - 自动填充，每列最小200px，等宽 */
+  gap: 16px;                  /* 间距 - 16px */
+  margin-bottom: 24px;         /* 下外边距 - 24px */
+}
+
+/* 统计卡片 - 显示学习统计数据 */
+.stat-card {
+  padding: 20px;              /* 内边距 - 20px */
+  background: var(--btn-primary); /* 背景 - 使用主题变量 */
+  border-radius: 12px;         /* 圆角 - 12px */
+}
