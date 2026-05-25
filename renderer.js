@@ -1,5 +1,3 @@
-const { ipcRenderer } = require('electron');
-
 let currentWordbook = null;
 let currentLearnWords = [];
 let currentReviewWords = [];
@@ -21,22 +19,117 @@ let skippedChoiceQuestions = 0;
 let totalDictationWords = 0;
 let completedDictationWords = 0;
 
+// 加载词书列表
 async function loadWordbooks() {
-  const wordbooks = await ipcRenderer.invoke('get-wordbooks');
-  const select = document.getElementById('wordbookSelect');
-  select.innerHTML = '<option value="">选择词书...</option>';
+  const wordbooks = api.getWordbooks();
+  
+  // 更新当前词书显示
+  if (currentWordbook) {
+    const selectedBook = wordbooks.find(book => book.book_id === currentWordbook.book_id);
+    if (selectedBook) {
+      updateCurrentWordbookDisplay(selectedBook);
+    }
+  }
+  
+  // 渲染书本样式的单词书卡片到书架
+  renderWordbookBooks(wordbooks);
+}
+
+// 更新当前词书显示
+function updateCurrentWordbookDisplay(book) {
+  // 更新封面
+  const coverElement = document.querySelector('.book-cover');
+  const nameElement = document.getElementById('currentWordbookName');
+  const statsElement = document.getElementById('currentWordbookStats');
+  
+  if (coverElement && nameElement && statsElement) {
+    // 更新封面（这里使用默认封面，实际可以根据需要加载自定义封面）
+    coverElement.src = 'assets/default-cover.svg';
+    coverElement.alt = book.book_name;
+    
+    // 更新名称和统计信息
+    nameElement.textContent = book.book_name;
+    statsElement.textContent = `${book.mastered_count}/${book.total_count}`;
+  }
+}
+
+// 渲染书本样式的单词书卡片到书架
+function renderWordbookBooks(wordbooks) {
+  const shelf = document.getElementById('wordbookShelf');
+  shelf.innerHTML = '';
   
   wordbooks.forEach(book => {
-    const option = document.createElement('option');
-    option.value = book.book_id;
-    option.textContent = `${book.book_name} (${book.mastered_count}/${book.total_count})`;
-    select.appendChild(option);
+    const bookElement = document.createElement('div');
+    bookElement.className = `wordbook-book ${currentWordbook && currentWordbook.book_id === book.book_id ? 'active' : ''}`;
+    bookElement.dataset.bookId = book.book_id;
+    bookElement.dataset.bookName = book.book_name;
+    
+    // 生成书本封面（使用书名的首字母）
+    const initials = book.book_name.substring(0, 2).toUpperCase();
+    
+    bookElement.innerHTML = `
+      <div class="wordbook-book-cover">${initials}</div>
+      <div class="wordbook-book-info">
+        <div class="wordbook-book-name">${book.book_name}</div>
+        <div class="wordbook-book-stats">${book.mastered_count}/${book.total_count}</div>
+      </div>
+    `;
+    
+    // 添加点击事件
+    bookElement.addEventListener('click', () => selectWordbookFromBook(book));
+    
+    shelf.appendChild(bookElement);
   });
+}
+
+// 从书本卡片选择词书
+function selectWordbookFromBook(book) {
+  currentWordbook = {
+    book_id: book.book_id,
+    book_name: book.book_name
+  };
+  
+  // 更新当前词书显示
+  updateCurrentWordbookDisplay(book);
+  
+  // 更新所有书本的激活状态
+  document.querySelectorAll('.wordbook-book').forEach(bookElement => {
+    bookElement.classList.remove('active');
+    if (parseInt(bookElement.dataset.bookId) === book.book_id) {
+      bookElement.classList.add('active');
+    }
+  });
+  
+  // 直接跳转到该单词本的单词总览页面
+  showOverview();
+  
+  console.log('当前词书:', currentWordbook);
+}
+
+// 更新当前词书显示
+function updateCurrentWordbookDisplay(book) {
+  const nameElement = document.getElementById('currentWordbookName');
+  const statsElement = document.getElementById('currentWordbookStats');
+  const coverElement = document.querySelector('.book-cover');
+  
+  // 更新封面（这里使用默认封面，实际可以根据需要加载自定义封面）
+  coverElement.src = 'assets/default-cover.svg';
+  coverElement.alt = book.book_name;
+  
+  // 更新名称和统计信息
+  nameElement.textContent = book.book_name;
+  statsElement.textContent = `${book.mastered_count}/${book.total_count}`;
+}
+
+// 跳转到单词书选择页面
+function goToWordbookPage() {
+  showPage('wordbookPage');
+  loadWordbooks();
 }
 
 async function loadReviewSettings() {
   try {
-    reviewSettings = await ipcRenderer.invoke('get-review-settings');
+    reviewSettings = api.getReviewSettings();
     
     if (!reviewSettings) {
       reviewSettings = {
@@ -83,8 +176,8 @@ async function saveReviewSettings() {
   
   const useCustomSettings = document.getElementById('useCustomReviewSettings').checked;
   const enableTodayReview = document.getElementById('enableTodayReview').checked;
-  
-  await ipcRenderer.invoke('update-review-settings', errorDaysMap, useCustomSettings, enableTodayReview);
+
+  api.updateReviewSettings(errorDaysMap, useCustomSettings, enableTodayReview);
   await loadReviewSettings();
   
   alert('复习设置已保存');
@@ -92,7 +185,7 @@ async function saveReviewSettings() {
 
 async function loadBlurSettings() {
   try {
-    blurSettings = await ipcRenderer.invoke('get-blur-settings');
+    blurSettings = api.getBlurSettings();
     
     if (!blurSettings) {
       blurSettings = {
@@ -142,32 +235,200 @@ async function loadBlurSettings() {
     }
     
     applyBlurSettings();
-  } catch (error) {
-    console.error('加载毛玻璃设置失败:', error);
-    blurSettings = {
-      button_blur: 20,
-      card_blur: 20,
-      search_blur: 20,
-      other_blur: 20,
-      background_blur: 0
-    };
-  }
-}
-
-function applyBlurSettings() {
-  const root = document.documentElement;
-  const settings = blurSettings || {
+} catch (error) {
+  console.error('加载毛玻璃设置失败:', error);
+  blurSettings = {
     button_blur: 20,
     card_blur: 20,
     search_blur: 20,
     other_blur: 20,
     background_blur: 0
   };
-  root.style.setProperty('--button-blur', `${settings.button_blur || 20}px`);
-  root.style.setProperty('--card-blur', `${settings.card_blur || 20}px`);
-  root.style.setProperty('--search-blur', `${settings.search_blur || 20}px`);
-  root.style.setProperty('--other-blur', `${settings.other_blur || 20}px`);
-  root.style.setProperty('--background-blur', `${settings.background_blur || 0}px`);
+}
+}
+
+// 加载字体颜色设置
+let fontColorSettings = null;
+async function loadFontColorSettings() {
+  try {
+    fontColorSettings = api.getThemeSettings();
+    
+    if (!fontColorSettings) {
+      fontColorSettings = {
+        light_text_primary: '#000000',
+        light_text_secondary: '#333333',
+        dark_text_primary: '#ffffff',
+        dark_text_secondary: '#b0b0b0'
+      };
+    }
+    
+    // 更新颜色选择器的值
+    const lightTextPrimary = document.getElementById('lightTextPrimary');
+    const lightTextPrimaryValue = document.getElementById('lightTextPrimaryValue');
+    const lightTextSecondary = document.getElementById('lightTextSecondary');
+    const lightTextSecondaryValue = document.getElementById('lightTextSecondaryValue');
+    const darkTextPrimary = document.getElementById('darkTextPrimary');
+    const darkTextPrimaryValue = document.getElementById('darkTextPrimaryValue');
+    const darkTextSecondary = document.getElementById('darkTextSecondary');
+    const darkTextSecondaryValue = document.getElementById('darkTextSecondaryValue');
+    
+    if (lightTextPrimary && lightTextPrimaryValue) {
+      lightTextPrimary.value = fontColorSettings.light_text_primary || '#000000';
+      lightTextPrimaryValue.value = fontColorSettings.light_text_primary || '#000000';
+    }
+    
+    if (lightTextSecondary && lightTextSecondaryValue) {
+      lightTextSecondary.value = fontColorSettings.light_text_secondary || '#333333';
+      lightTextSecondaryValue.value = fontColorSettings.light_text_secondary || '#333333';
+    }
+    
+    if (darkTextPrimary && darkTextPrimaryValue) {
+      darkTextPrimary.value = fontColorSettings.dark_text_primary || '#ffffff';
+      darkTextPrimaryValue.value = fontColorSettings.dark_text_primary || '#ffffff';
+    }
+    
+    if (darkTextSecondary && darkTextSecondaryValue) {
+      darkTextSecondary.value = fontColorSettings.dark_text_secondary || '#b0b0b0';
+      darkTextSecondaryValue.value = fontColorSettings.dark_text_secondary || '#b0b0b0';
+    }
+    
+    // 应用字体颜色设置到当前页面
+    applyFontColorSettings();
+  } catch (error) {
+    console.error('加载字体颜色设置失败:', error);
+    fontColorSettings = {
+      light_text_primary: '#000000',
+      light_text_secondary: '#333333',
+      dark_text_primary: '#ffffff',
+      dark_text_secondary: '#b0b0b0'
+    };
+  }
+}
+
+// 保存字体颜色设置
+async function saveFontColorSettings() {
+  try {
+    const lightTextPrimary = document.getElementById('lightTextPrimary').value;
+    const lightTextSecondary = document.getElementById('lightTextSecondary').value;
+    const darkTextPrimary = document.getElementById('darkTextPrimary').value;
+    const darkTextSecondary = document.getElementById('darkTextSecondary').value;
+    
+    const settings = {
+      light_text_primary: lightTextPrimary,
+      light_text_secondary: lightTextSecondary,
+      dark_text_primary: darkTextPrimary,
+      dark_text_secondary: darkTextSecondary
+    };
+    
+    api.saveThemeSettings(settings);
+    fontColorSettings = settings;
+    
+    // 应用字体颜色设置到当前页面
+    applyFontColorSettings();
+    
+    alert('字体颜色设置已保存');
+  } catch (error) {
+    console.error('保存字体颜色设置失败:', error);
+    alert('保存字体颜色设置失败');
+  }
+}
+
+// 应用字体颜色设置到当前页面
+function applyFontColorSettings() {
+  const root = document.documentElement;
+  const isLightTheme = document.body.classList.contains('light-theme') || !document.body.classList.contains('dark-theme');
+  
+  if (isLightTheme) {
+    root.style.setProperty('--text-primary', fontColorSettings.light_text_primary || '#000000');
+    root.style.setProperty('--text-secondary', fontColorSettings.light_text_secondary || '#333333');
+  } else {
+    root.style.setProperty('--text-primary', fontColorSettings.dark_text_primary || '#ffffff');
+    root.style.setProperty('--text-secondary', fontColorSettings.dark_text_secondary || '#b0b0b0');
+  }
+}
+
+// 初始化颜色选择器事件监听器
+function initColorPickerListeners() {
+  // 浅色模式主要文字颜色
+  const lightTextPrimary = document.getElementById('lightTextPrimary');
+  const lightTextPrimaryValue = document.getElementById('lightTextPrimaryValue');
+  if (lightTextPrimary && lightTextPrimaryValue) {
+    lightTextPrimary.addEventListener('input', (e) => {
+      lightTextPrimaryValue.value = e.target.value;
+    });
+    lightTextPrimaryValue.addEventListener('input', (e) => {
+      lightTextPrimary.value = e.target.value;
+    });
+  }
+  
+  // 浅色模式次要文字颜色
+  const lightTextSecondary = document.getElementById('lightTextSecondary');
+  const lightTextSecondaryValue = document.getElementById('lightTextSecondaryValue');
+  if (lightTextSecondary && lightTextSecondaryValue) {
+    lightTextSecondary.addEventListener('input', (e) => {
+      lightTextSecondaryValue.value = e.target.value;
+    });
+    lightTextSecondaryValue.addEventListener('input', (e) => {
+      lightTextSecondary.value = e.target.value;
+    });
+  }
+  
+  // 深色模式主要文字颜色
+  const darkTextPrimary = document.getElementById('darkTextPrimary');
+  const darkTextPrimaryValue = document.getElementById('darkTextPrimaryValue');
+  if (darkTextPrimary && darkTextPrimaryValue) {
+    darkTextPrimary.addEventListener('input', (e) => {
+      darkTextPrimaryValue.value = e.target.value;
+    });
+    darkTextPrimaryValue.addEventListener('input', (e) => {
+      darkTextPrimary.value = e.target.value;
+    });
+  }
+  
+  // 深色模式次要文字颜色
+  const darkTextSecondary = document.getElementById('darkTextSecondary');
+  const darkTextSecondaryValue = document.getElementById('darkTextSecondaryValue');
+  if (darkTextSecondary && darkTextSecondaryValue) {
+    darkTextSecondary.addEventListener('input', (e) => {
+      darkTextSecondaryValue.value = e.target.value;
+    });
+    darkTextSecondaryValue.addEventListener('input', (e) => {
+      darkTextSecondary.value = e.target.value;
+    });
+  }
+}
+
+function applyBlurSettings() {
+  const root = document.documentElement;
+  const enableBlur = document.getElementById('enableBlurEffect');
+  const isBlurEnabled = enableBlur ? enableBlur.checked : false;
+  
+  // 获取当前滑块的实时值
+  const buttonBlurInput = document.getElementById('buttonBlurIntensity');
+  const cardBlurInput = document.getElementById('cardBlurIntensity');
+  const searchBlurInput = document.getElementById('searchBlurIntensity');
+  const otherBlurInput = document.getElementById('otherBlurIntensity');
+  const backgroundBlurInput = document.getElementById('backgroundBlurIntensity');
+  
+  // 从滑块获取值，没有滑块则使用保存的值
+  const buttonBlur = buttonBlurInput ? parseInt(buttonBlurInput.value) || 20 : (blurSettings?.button_blur || 20);
+  const cardBlur = cardBlurInput ? parseInt(cardBlurInput.value) || 20 : (blurSettings?.card_blur || 20);
+  const searchBlur = searchBlurInput ? parseInt(searchBlurInput.value) || 20 : (blurSettings?.search_blur || 20);
+  const otherBlur = otherBlurInput ? parseInt(otherBlurInput.value) || 20 : (blurSettings?.other_blur || 20);
+  const backgroundBlur = backgroundBlurInput ? parseInt(backgroundBlurInput.value) || 0 : (blurSettings?.background_blur || 0);
+  
+  // 如果毛玻璃效果未启用，所有模糊值设为0
+  const finalButtonBlur = isBlurEnabled ? buttonBlur : 0;
+  const finalCardBlur = isBlurEnabled ? cardBlur : 0;
+  const finalSearchBlur = isBlurEnabled ? searchBlur : 0;
+  const finalOtherBlur = isBlurEnabled ? otherBlur : 0;
+  const finalBackgroundBlur = isBlurEnabled ? backgroundBlur : 0;
+  
+  root.style.setProperty('--button-blur', `${finalButtonBlur}px`);
+  root.style.setProperty('--card-blur', `${finalCardBlur}px`);
+  root.style.setProperty('--search-blur', `${finalSearchBlur}px`);
+  root.style.setProperty('--other-blur', `${finalOtherBlur}px`);
+  root.style.setProperty('--background-blur', `${finalBackgroundBlur}px`);
 }
 
 async function saveBlurSettings() {
@@ -177,29 +438,43 @@ async function saveBlurSettings() {
   const otherBlur = parseInt(document.getElementById('otherBlurIntensity').value) || 20;
   const backgroundBlur = parseInt(document.getElementById('backgroundBlurIntensity').value) || 0;
   
-  await ipcRenderer.invoke('update-blur-settings', buttonBlur, cardBlur, searchBlur, otherBlur, backgroundBlur);
+  api.updateBlurSettings(buttonBlur, cardBlur, searchBlur, otherBlur, backgroundBlur);
   await loadBlurSettings();
   
   alert('毛玻璃设置已保存');
 }
 
+// 选择词书（兼容旧的调用方式）
 function selectWordbook(bookId) {
   if (!bookId) {
     currentWordbook = null;
+    const display = document.getElementById('currentWordbookDisplay');
+    const name = display.querySelector('.wordbook-name');
+    const stats = display.querySelector('.wordbook-stats');
+    
+    name.textContent = '选择词书...';
+    stats.textContent = '';
+    
+    // 更新所有卡片的激活状态
+    document.querySelectorAll('.wordbook-card').forEach(card => {
+      card.classList.remove('active');
+    });
+    
+    // 关闭下拉面板
+    hideWordbookDropdown();
     return;
   }
   
-  const wordbooks = document.getElementById('wordbookSelect').options;
+  // 这里兼容旧代码，实际选择逻辑已移至selectWordbookFromCard
+  // 从当前词书列表中查找对应ID的词书
+  const wordbooks = document.querySelectorAll('.wordbook-card');
   for (let i = 0; i < wordbooks.length; i++) {
-    if (wordbooks[i].value == bookId) {
-      currentWordbook = {
-        book_id: parseInt(bookId),
-        book_name: wordbooks[i].text.split(' (')[0]
-      };
+    if (wordbooks[i].dataset.bookId == bookId) {
+      // 模拟点击对应卡片
+      wordbooks[i].click();
       break;
     }
   }
-  console.log('当前词书:', currentWordbook);
 }
 
 function showPage(pageId) {
@@ -209,7 +484,14 @@ function showPage(pageId) {
   document.getElementById(pageId).classList.add('active');
 }
 
-function showSettingsModal() {
+async function showSettingsModal() {
+  await loadFontColorSettings();
+  initColorPickerListeners();
+  
+  // 加载学习设置
+  const learnSettings = api.getLearnSettings();
+  document.getElementById('defaultLearnCount').value = learnSettings.default_learn_count;
+  
   document.getElementById('settingsModal').classList.add('active');
 }
 
@@ -287,11 +569,11 @@ async function startLearn() {
     return;
   }
   
-  const count = await showInputModal('学习设置', '请输入今日学习单词数量（建议20-50个）:', '20');
-  if (!count || isNaN(count)) return;
-  
-  const learnCount = parseInt(count);
-  const words = await ipcRenderer.invoke('get-learn-words', currentWordbook.book_id, learnCount);
+  // 获取学习设置
+  const learnSettings = api.getLearnSettings();
+  let learnCount = learnSettings.default_learn_count;
+
+  const words = api.getLearnWords(currentWordbook.book_id, learnCount);
   
   if (words.length === 0) {
     alert('没有新单词可学习');
@@ -328,7 +610,7 @@ async function startReview() {
     return;
   }
   
-  const words = await ipcRenderer.invoke('get-review-words', currentWordbook.book_id);
+  const words = api.getReviewWords(currentWordbook.book_id);
   
   if (words.length === 0) {
     alert('没有需要复习的单词');
@@ -351,28 +633,34 @@ async function showCurrentLearnWord() {
     document.getElementById('learnProgress').textContent = 
       `${currentLearnIndex + 1}/${currentLearnWords.length}`;
     
-    const wordDetail = await ipcRenderer.invoke('get-word-detail', word.word_id);
+    const wordDetail = api.getWordDetail(word.word_id);
     Object.assign(word, wordDetail);
     
     const progress = wordLearnProgress[word.word_id];
     
     wordLearnProgress[word.word_id].stage1 = true;
     
+
+    
     container.innerHTML = `
-      <div class="word-card">
-        <div class="word" style="font-size: 28px; font-weight: bold; margin-bottom: 15px;">${word.english}</div>
-        <div class="definition" style="font-size: 20px;">${word.part_of_speech ? `${word.part_of_speech} ${word.chinese}` : word.chinese}</div>
-        <div class="phonetic" style="margin-top: 10px; font-size: 16px;">${word.phonetic_uk || word.phonetic_us || ''}</div>
-        <div class="audio-buttons" style="margin-top: 15px;">
-          <button class="audio-btn" onclick="playAudio('${word.audio_uk_url}', 'uk', '${word.english}')">🇬🇧 英式发音</button>
-          <button class="audio-btn" onclick="playAudio('${word.audio_us_url}', 'us', '${word.english}')">🇺🇸 美式发音</button>
-        </div>
-        ${word.sentence ? `<div class="example" style="margin-top: 15px; font-size: 16px;">${word.sentence}</div>` : ''}
-        <div class="navigation-buttons" style="display: flex; justify-content: space-between; margin-top: 25px;">
-          <button class="nav-btn" onclick="previousLearnWord()" ${currentLearnIndex === 0 ? 'disabled' : ''}>上一个</button>
-          <button class="nav-btn" onclick="nextLearnWord()">下一个</button>
+      <div class="learn-center-content">
+        <div class="word-card">
+          <div class="word" style="font-size: 28px; font-weight: bold; margin-bottom: 15px;">${word.english}</div>
+          <div class="definition" style="font-size: 20px;">${word.part_of_speech ? `${word.part_of_speech} ${word.chinese}` : word.chinese}</div>
+          <div class="phonetic" style="margin-top: 10px; font-size: 16px;">${word.phonetic_uk || word.phonetic_us || ''}</div>
+          <div class="audio-buttons" style="margin-top: 15px;">
+            <button class="audio-btn" onclick="playAudio('${word.audio_uk_url}', 'uk', '${word.english}')">🇬🇧 英式发音</button>
+            <button class="audio-btn" onclick="playAudio('${word.audio_us_url}', 'us', '${word.english}')">🇺🇸 美式发音</button>
+          </div>
+          ${word.sentence ? `<div class="example" style="margin-top: 15px; font-size: 16px;">${word.sentence}</div>` : ''}
+          
+          <div class="navigation-buttons" style="display: flex; justify-content: space-between; margin-top: 25px;">
+            <button class="nav-btn" onclick="previousLearnWord()" ${currentLearnIndex === 0 ? 'disabled' : ''}>上一个</button>
+            <button class="nav-btn" onclick="nextLearnWord()">下一个</button>
+          </div>
         </div>
       </div>
+
     `;
   } else if (currentLearnStage === 2) {
     if (choiceQuestionQueue.length === 0) {
@@ -407,7 +695,7 @@ async function showCurrentLearnWord() {
       `${completedChoiceQuestions + 1}/${effectiveTotal}`;
     
     const questionWord = currentLearnWords.find(w => w.word_id === currentQuestion.wordId);
-    const questionWordDetail = await ipcRenderer.invoke('get-word-detail', questionWord.word_id);
+    const questionWordDetail = api.getWordDetail(questionWord.word_id);
     Object.assign(questionWord, questionWordDetail);
     
     if (currentQuestion.type === 'selectChinese') {
@@ -447,19 +735,21 @@ async function showCurrentLearnWord() {
       }
       
       container.innerHTML = `
-        <div class="word-card">
-          <div class="word" style="font-size: 32px; font-weight: bold; margin-bottom: 15px;">${questionWord.english}</div>
-          <div class="phonetic" style="margin-top: 10px; font-size: 18px;">${questionWord.phonetic_uk || questionWord.phonetic_us || ''}</div>
-          <div class="audio-buttons" style="margin-top: 15px;">
-            <button class="audio-btn" onclick="playAudio('${questionWord.audio_uk_url}', 'uk', '${questionWord.english}')">🇬🇧 英式发音</button>
-            <button class="audio-btn" onclick="playAudio('${questionWord.audio_us_url}', 'us', '${questionWord.english}')">🇺🇸 美式发音</button>
+        <div class="learn-center-content">
+          <div class="word-card">
+            <div class="word" style="font-size: 32px; font-weight: bold; margin-bottom: 15px;">${questionWord.english}</div>
+            <div class="phonetic" style="margin-top: 10px; font-size: 18px;">${questionWord.phonetic_uk || questionWord.phonetic_us || ''}</div>
+            <div class="audio-buttons" style="margin-top: 15px;">
+              <button class="audio-btn" onclick="playAudio('${questionWord.audio_uk_url}', 'uk', '${questionWord.english}')">🇬🇧 英式发音</button>
+              <button class="audio-btn" onclick="playAudio('${questionWord.audio_us_url}', 'us', '${questionWord.english}')">🇺🇸 美式发音</button>
+            </div>
+            <div class="options">
+              ${chineseOptions.map(opt => `
+                <button class="option-btn" onclick="checkLearnAnswer('${opt}', '${questionWord.chinese}')">${opt}</button>
+              `).join('')}
+            </div>
+            <div id="feedback" style="margin-top: 20px;"></div>
           </div>
-          <div class="options">
-            ${chineseOptions.map(opt => `
-              <button class="option-btn" onclick="checkLearnAnswer('${opt}', '${questionWord.chinese}')">${opt}</button>
-            `).join('')}
-          </div>
-          <div id="feedback" style="margin-top: 20px;"></div>
         </div>
       `;
     } else {
@@ -495,14 +785,16 @@ async function showCurrentLearnWord() {
       }
       
       container.innerHTML = `
-        <div class="word-card">
-          <div class="definition" style="font-size: 28px; font-weight: bold; margin-bottom: 15px;">${questionWord.part_of_speech ? `${questionWord.part_of_speech} ${questionWord.chinese}` : questionWord.chinese}</div>
-          <div class="options">
-            ${englishOptions.map(opt => `
-              <button class="option-btn" onclick="checkLearnAnswer('${opt}', '${questionWord.english}')">${opt}</button>
-            `).join('')}
+        <div class="learn-center-content">
+          <div class="word-card">
+            <div class="definition" style="font-size: 28px; font-weight: bold; margin-bottom: 15px;">${questionWord.part_of_speech ? `${questionWord.part_of_speech} ${questionWord.chinese}` : questionWord.chinese}</div>
+            <div class="options">
+              ${englishOptions.map(opt => `
+                <button class="option-btn" onclick="checkLearnAnswer('${opt}', '${questionWord.english}')">${opt}</button>
+              `).join('')}
+            </div>
+            <div id="feedback" style="margin-top: 20px;"></div>
           </div>
-          <div id="feedback" style="margin-top: 20px;"></div>
         </div>
       `;
     }
@@ -512,7 +804,7 @@ async function showCurrentLearnWord() {
       if (completedDictationWords >= totalDictationWords && totalDictationWords > 0) {
         console.log('默写完成，结束学习');
         for (const word of currentLearnWords) {
-          await ipcRenderer.invoke('mark-word-learned', word.word_id);
+          api.markWordLearned(word.word_id);
         }
         alert('学习完成！所有单词已进入复习阶段。');
         showPage('homePage');
@@ -523,7 +815,7 @@ async function showCurrentLearnWord() {
       if (dictationWordQueue.length === 0) {
         console.log('无法生成默写队列，结束学习');
         for (const word of currentLearnWords) {
-          await ipcRenderer.invoke('mark-word-learned', word.word_id);
+          api.markWordLearned(word.word_id);
         }
         alert('学习完成！所有单词已进入复习阶段。');
         showPage('homePage');
@@ -540,27 +832,29 @@ async function showCurrentLearnWord() {
       `${completedDictationWords + 1}/${totalDictationWords}`;
     
     const dictationWord = currentLearnWords.find(w => w.word_id === dictationWordQueue[0].wordId);
-    const dictationWordDetail = await ipcRenderer.invoke('get-word-detail', dictationWord.word_id);
+    const dictationWordDetail = api.getWordDetail(dictationWord.word_id);
     Object.assign(dictationWord, dictationWordDetail);
     
     container.innerHTML = `
-      <div class="word-card">
-        <div class="definition" style="font-size: 28px; font-weight: bold; margin-bottom: 15px;">${dictationWord.part_of_speech ? `${dictationWord.part_of_speech} ${dictationWord.chinese}` : dictationWord.chinese}</div>
-        <div class="input-area">
-          <input type="text" id="answerInput" placeholder="请输入英文单词" autocomplete="off" spellcheck="false">
-        </div>
-        <div class="action-buttons">
-          <button class="submit-btn" onclick="checkLearnAnswer()">提交</button>
-        </div>
-        <div id="feedback" style="margin-top: 20px;"></div>
-        <div id="wordDetail" style="display: none; margin-top: 20px;">
-          <div class="word" style="font-size: 24px;">${dictationWord.english}</div>
-          <div class="phonetic" style="margin-top: 5px;">${dictationWord.phonetic_uk || dictationWord.phonetic_us || ''}</div>
-          <div class="audio-buttons" style="margin-top: 10px;">
-            <button class="audio-btn" onclick="playAudio('${dictationWord.audio_uk_url}', 'uk', '${dictationWord.english}')">🇬🇧 英式发音</button>
-            <button class="audio-btn" onclick="playAudio('${dictationWord.audio_us_url}', 'us', '${dictationWord.english}')">🇺🇸 美式发音</button>
+      <div class="learn-center-content">
+        <div class="word-card">
+          <div class="definition" style="font-size: 28px; font-weight: bold; margin-bottom: 15px;">${dictationWord.part_of_speech ? `${dictationWord.part_of_speech} ${dictationWord.chinese}` : dictationWord.chinese}</div>
+          <div class="input-area">
+            <input type="text" id="answerInput" placeholder="请输入英文单词" autocomplete="off" spellcheck="false">
           </div>
-          ${dictationWord.sentence ? `<div class="example" style="margin-top: 15px;">${dictationWord.sentence}</div>` : ''}
+          <div class="action-buttons">
+            <button class="submit-btn" onclick="checkLearnAnswer()">提交</button>
+          </div>
+          <div id="feedback" style="margin-top: 20px;"></div>
+          <div id="wordDetail" style="display: none; margin-top: 20px;">
+            <div class="word" style="font-size: 24px;">${dictationWord.english}</div>
+            <div class="phonetic" style="margin-top: 5px;">${dictationWord.phonetic_uk || dictationWord.phonetic_us || ''}</div>
+            <div class="audio-buttons" style="margin-top: 10px;">
+              <button class="audio-btn" onclick="playAudio('${dictationWord.audio_uk_url}', 'uk', '${dictationWord.english}')">🇬🇧 英式发音</button>
+              <button class="audio-btn" onclick="playAudio('${dictationWord.audio_us_url}', 'us', '${dictationWord.english}')">🇺🇸 美式发音</button>
+            </div>
+            ${dictationWord.sentence ? `<div class="example" style="margin-top: 15px;">${dictationWord.sentence}</div>` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -631,7 +925,7 @@ async function generateDictationWords() {
 }
 
 async function generateChineseOptions(currentWord) {
-  const allWords = await ipcRenderer.invoke('get-options', currentWordbook.book_id, currentWord.word_id);
+  const allWords = api.getOptions(currentWordbook.book_id, currentWord.word_id);
   
   if (allWords.length < 3) {
     return [currentWord.part_of_speech ? `${currentWord.part_of_speech} ${currentWord.chinese}` : currentWord.chinese];
@@ -651,7 +945,7 @@ async function generateChineseOptions(currentWord) {
 }
 
 async function generateEnglishOptions(currentWord) {
-  const allWords = await ipcRenderer.invoke('get-options', currentWordbook.book_id, currentWord.word_id);
+  const allWords = api.getOptions(currentWordbook.book_id, currentWord.word_id);
   
   if (allWords.length < 3) {
     return [currentWord.english];
@@ -682,8 +976,8 @@ async function checkLearnAnswer(selected, correct) {
     const progress = wordLearnProgress[currentWord.word_id];
     
     if (currentQuestion.type === 'selectChinese') {
-      const selectedChinese = selected.replace(/^[a-z]+\.\s*/, '');
-      const correctChinese = correct.replace(/^[a-z]+\.\s*/, '');
+      const selectedChinese = selected.replace(/^[a-z]+\.?\s*/, '');
+      const correctChinese = correct.replace(/^[a-z]+\.?\s*/, '');
       isCorrect = selectedChinese === correctChinese;
     } else if (currentQuestion.type === 'selectEnglish') {
       isCorrect = selected === correct;
@@ -724,7 +1018,7 @@ async function checkLearnAnswer(selected, correct) {
       setTimeout(async () => {
         if (completedDictationWords >= totalDictationWords && totalDictationWords > 0) {
           for (const word of currentLearnWords) {
-            await ipcRenderer.invoke('mark-word-learned', word.word_id);
+            api.markWordLearned(word.word_id);
           }
           alert('学习完成！所有单词已进入复习阶段。');
           showPage('homePage');
@@ -788,32 +1082,38 @@ async function showCurrentReviewWord() {
   document.getElementById('reviewProgress').textContent = 
     `${currentReviewIndex + 1}/${currentReviewWords.length}`;
   
-  const wordDetail = await ipcRenderer.invoke('get-word-detail', word.word_id);
+  const wordDetail = api.getWordDetail(word.word_id);
   Object.assign(word, wordDetail);
   
+
+  
   container.innerHTML = `
-    <div class="word-card">
-      <div class="word">${word.english}</div>
-      <div class="phonetic">${word.phonetic_uk || word.phonetic_us || ''}</div>
-      <div class="audio-buttons">
-        <button class="audio-btn" onclick="playAudio('${word.audio_uk_url}', 'uk', '${word.english}')">
-          🇬🇧 英式发音
-        </button>
-        <button class="audio-btn" onclick="playAudio('${word.audio_us_url}', 'us', '${word.english}')">
-          🇺🇸 美式发音
-        </button>
-      </div>
-      <div class="definition">${word.chinese}</div>
-      ${word.sentence ? `<div class="example">${word.sentence}</div>` : ''}
-      <div class="action-buttons">
-        <button class="submit-btn" onclick="reviewWord(false)">不记得</button>
-        <button class="next-btn" onclick="reviewWord(true)">记得</button>
-      </div>
-      <div class="navigation-buttons" style="display: flex; justify-content: space-between; margin-top: 20px;">
-        <button class="nav-btn" onclick="previousReviewWord()" ${currentReviewIndex === 0 ? 'disabled' : ''}>上一个</button>
-        <button class="nav-btn" onclick="nextReviewWord()" ${currentReviewIndex === currentReviewWords.length - 1 ? 'disabled' : ''}>下一个</button>
+    <div class="learn-center-content">
+      <div class="word-card">
+        <div class="word" style="font-size: 28px; font-weight: bold; margin-bottom: 15px;">${word.english}</div>
+        <div class="phonetic" style="margin-top: 10px; font-size: 16px;">${word.phonetic_uk || word.phonetic_us || ''}</div>
+        <div class="audio-buttons" style="margin-top: 15px;">
+          <button class="audio-btn" onclick="playAudio('${word.audio_uk_url}', 'uk', '${word.english}')">
+            🇬🇧 英式发音
+          </button>
+          <button class="audio-btn" onclick="playAudio('${word.audio_us_url}', 'us', '${word.english}')">
+            🇺🇸 美式发音
+          </button>
+        </div>
+        <div class="definition" style="font-size: 20px;">${word.part_of_speech ? `${word.part_of_speech} ${word.chinese}` : word.chinese}</div>
+        ${word.sentence ? `<div class="example" style="margin-top: 15px; font-size: 16px;">${word.sentence}</div>` : ''}
+        
+        <div class="action-buttons" style="margin-top: 25px;">
+          <button class="submit-btn" onclick="reviewWord(false)">不记得</button>
+          <button class="next-btn" onclick="reviewWord(true)">记得</button>
+        </div>
+        <div class="navigation-buttons" style="display: flex; justify-content: space-between; margin-top: 20px;">
+          <button class="nav-btn" onclick="previousReviewWord()" ${currentReviewIndex === 0 ? 'disabled' : ''}>上一个</button>
+          <button class="nav-btn" onclick="nextReviewWord()" ${currentReviewIndex === currentReviewWords.length - 1 ? 'disabled' : ''}>下一个</button>
+        </div>
       </div>
     </div>
+
   `;
 }
 
@@ -822,9 +1122,9 @@ async function reviewWord(remembered) {
   
   if (reviewSettings && reviewSettings.use_custom_settings === 1) {
     const errorCount = word.review_count || 0;
-    await ipcRenderer.invoke('review-word-custom', word.word_id, remembered, errorCount);
+    api.reviewWordCustom(word.word_id, remembered, errorCount);
   } else {
-    await ipcRenderer.invoke('review-word', word.word_id, remembered);
+    api.reviewWord(word.word_id, remembered);
   }
   
   currentReviewIndex++;
@@ -873,7 +1173,7 @@ async function loadOverviewContent() {
 }
 
 async function loadAllWords() {
-  const stats = await ipcRenderer.invoke('get-stats', currentWordbook.book_id);
+  const stats = api.getStats(currentWordbook.book_id);
   
   const container = document.getElementById('overviewContent');
   container.innerHTML = `
@@ -917,7 +1217,7 @@ async function loadAllWords() {
 }
 
 async function loadTodayLearnedWords() {
-  const words = await ipcRenderer.invoke('get-today-learned-words', currentWordbook.book_id);
+  const words = api.getTodayLearnedWords(currentWordbook.book_id);
   
   const container = document.getElementById('overviewContent');
   
@@ -951,7 +1251,7 @@ async function loadTodayLearnedWords() {
 }
 
 async function loadTodayReviewWords() {
-  const words = await ipcRenderer.invoke('get-today-review-words', currentWordbook.book_id);
+  const words = api.getTodayReviewWords(currentWordbook.book_id);
   
   const container = document.getElementById('overviewContent');
   
@@ -989,7 +1289,7 @@ async function filterWords() {
   const status = document.getElementById('statusFilter').value;
   const sort = document.getElementById('sortFilter').value;
   
-  const words = await ipcRenderer.invoke('get-words', currentWordbook.book_id, search, status, sort);
+  const words = api.getWords(currentWordbook.book_id, search, status, sort);
   const container = document.getElementById('wordList');
   
   container.innerHTML = words.map(word => `
@@ -1013,7 +1313,7 @@ async function filterWords() {
 
 async function filterTodayLearnedWords() {
   const search = document.getElementById('searchInput').value.toLowerCase();
-  const words = await ipcRenderer.invoke('get-today-learned-words', currentWordbook.book_id);
+  const words = api.getTodayLearnedWords(currentWordbook.book_id);
   const container = document.getElementById('wordList');
   
   const filteredWords = words.filter(word => 
@@ -1042,7 +1342,7 @@ async function filterTodayLearnedWords() {
 
 async function filterTodayReviewWords() {
   const search = document.getElementById('searchInput').value.toLowerCase();
-  const words = await ipcRenderer.invoke('get-today-review-words', currentWordbook.book_id);
+  const words = api.getTodayReviewWords(currentWordbook.book_id);
   const container = document.getElementById('wordList');
   
   const filteredWords = words.filter(word => 
@@ -1070,7 +1370,7 @@ async function filterTodayReviewWords() {
 }
 
 async function loadLearningWords() {
-  const words = await ipcRenderer.invoke('get-learning-words', currentWordbook.book_id);
+  const words = api.getLearningWords(currentWordbook.book_id);
   
   const container = document.getElementById('overviewContent');
   
@@ -1105,7 +1405,7 @@ async function loadLearningWords() {
 
 async function filterLearningWords() {
   const search = document.getElementById('searchInput').value.toLowerCase();
-  const words = await ipcRenderer.invoke('get-learning-words', currentWordbook.book_id);
+  const words = api.getLearningWords(currentWordbook.book_id);
   const container = document.getElementById('wordList');
   
   const filteredWords = words.filter(word => 
@@ -1152,7 +1452,7 @@ async function addWord() {
     return;
   }
   
-  await ipcRenderer.invoke('add-word', currentWordbook.book_id, english, chinese);
+  api.addWord(currentWordbook.book_id, english, chinese);
   hideAddWordModal();
   await loadWordbooks();
   filterWords();
@@ -1161,16 +1461,15 @@ async function addWord() {
 function editWord(wordId) {
   const word = currentWordbook ? null : null;
   const words = document.querySelectorAll('.word-item');
-  
-  ipcRenderer.invoke('get-words', currentWordbook.book_id, '', 'all', 'alphabet').then(allWords => {
-    const word = allWords.find(w => w.word_id === wordId);
-    if (word) {
-      document.getElementById('editWordId').value = word.word_id;
-      document.getElementById('editWordEnglish').value = word.english;
-      document.getElementById('editWordChinese').value = word.chinese;
-      document.getElementById('editWordModal').classList.add('active');
-    }
-  });
+
+  const allWords = api.getWords(currentWordbook.book_id, '', 'all', 'alphabet');
+  const word = allWords.find(w => w.word_id === wordId);
+  if (word) {
+    document.getElementById('editWordId').value = word.word_id;
+    document.getElementById('editWordEnglish').value = word.english;
+    document.getElementById('editWordChinese').value = word.chinese;
+    document.getElementById('editWordModal').classList.add('active');
+  }
 }
 
 function hideEditWordModal() {
@@ -1187,7 +1486,7 @@ async function saveWord() {
     return;
   }
   
-  await ipcRenderer.invoke('update-word', wordId, english, chinese);
+  api.updateWord(wordId, english, chinese);
   hideEditWordModal();
   await loadWordbooks();
   filterWords();
@@ -1197,7 +1496,7 @@ async function deleteWord() {
   const wordId = parseInt(document.getElementById('editWordId').value);
   
   if (confirm('确定要删除这个单词吗？')) {
-    await ipcRenderer.invoke('delete-word', wordId);
+    api.deleteWord(wordId);
     hideEditWordModal();
     await loadWordbooks();
     filterWords();
@@ -1239,6 +1538,163 @@ async function playAudio(url, type, wordText) {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+// 监听iframe消息
+window.addEventListener('message', (event) => {
+  // 验证消息来源
+  if (event.origin === 'https://music.cpp-prog.com') {
+    const data = event.data;
+    
+    // 处理不同类型的消息
+    if (data.type === 'lyric') {
+      // 更新歌词
+      updateLyric(data.lyric);
+    } else if (data.type === 'playing') {
+      // 更新播放状态
+      isPlaying = data.isPlaying;
+      updatePlayButton();
+      
+      // 更新当前播放的歌曲信息
+      if (data.song) {
+        // 检查歌曲是否在播放列表中
+        const songIndex = currentPlaylist.findIndex(song => song.id === data.song.id);
+        if (songIndex === -1) {
+          // 如果不在播放列表中，添加到列表
+          currentPlaylist.push(data.song);
+          currentSongIndex = currentPlaylist.length - 1;
+        } else {
+          // 如果在播放列表中，更新当前索引
+          currentSongIndex = songIndex;
+        }
+        updateCurrentSongInfo();
+      }
+    }
+  }
+});
+
+// 初始化音乐播放器
+function initMusicPlayer() {
+  musicAudioElement = new Audio();
+  
+  // 监听音乐播放完成事件
+  musicAudioElement.addEventListener('ended', () => {
+    if (playMode === 'loop') {
+      // 单曲循环，重新播放当前歌曲
+      musicAudioElement.currentTime = 0;
+      musicAudioElement.play().catch(error => {
+        console.error('单曲循环播放失败:', error);
+      });
+    } else {
+      // 其他模式，播放下一首
+      playNextSong();
+    }
+  });
+  
+  // 监听音乐进度变化
+  musicAudioElement.addEventListener('timeupdate', () => {
+    updateProgress();
+    updateLyricDisplay();
+  });
+  
+  // 监听音乐加载完成事件
+  musicAudioElement.addEventListener('loadedmetadata', updateDuration);
+}
+
+// 更新播放进度
+function updateProgress() {
+  if (!musicAudioElement || !musicAudioElement.duration) return;
+  
+  const progress = (musicAudioElement.currentTime / musicAudioElement.duration) * 100;
+  document.getElementById('progressBar').value = progress;
+  
+  // 更新当前时间
+  document.getElementById('currentTime').textContent = formatTime(musicAudioElement.currentTime);
+}
+
+// 更新歌曲时长
+function updateDuration() {
+  if (!musicAudioElement || !musicAudioElement.duration) return;
+  
+  document.getElementById('duration').textContent = formatTime(musicAudioElement.duration);
+}
+
+// 格式化时间为 mm:ss 格式
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+}
+
+// 搜索cpp-prog音乐（基于 https://music.cpp-prog.com/）
+async function searchCppProgMusic(keyword) {
+  // 调试信息：输出搜索关键词
+  console.log('cpp-prog音乐搜索关键词:', keyword);
+  
+  try {
+    // 使用新的音乐API封装进行搜索
+    const results = await musicApi.search(keyword, musicSources.currentSource, 20, 1);
+    
+    // 调试信息：输出搜索结果
+    console.log('cpp-prog音乐搜索结果:', results);
+    
+    return results;
+  } catch (error) {
+    console.error('cpp-prog音乐搜索失败:', error);
+    return [];
+  }
+}
+
+// 多来源搜索，支持从多个音乐源搜索音乐
+async function searchMusicFromMultipleSources(keyword) {
+  let allResults = [];
+  
+  // 获取所有可用的音乐源
+  const availableSources = musicSources.getAvailableSources();
+  
+  // 从每个可用音乐源搜索音乐
+  for (const source of availableSources) {
+    console.log(`从${source.name}搜索音乐: ${keyword}`);
+    const results = await musicApi.search(keyword, source.id, 10, 1);
+    
+    // 添加音乐源标识
+    const sourceResults = results.map(song => ({
+      ...song,
+      source: source.name,
+      sourceType: source.id
+    }));
+    
+    allResults = allResults.concat(sourceResults);
+  }
+  
+  // 调试信息：输出最终搜索结果
+  console.log('多来源音乐搜索结果数量:', allResults.length);
+  console.log('多来源音乐搜索结果:', allResults);
+  
+  // 去重，保留每个歌曲的第一个出现
+  const uniqueResults = [];
+  const seenIds = new Set();
+  for (const song of allResults) {
+    if (!seenIds.has(song.id)) {
+      seenIds.add(song.id);
+      uniqueResults.push(song);
+    }
+  }
+  
+  return uniqueResults;
+}
+
+// 显示搜索结果
+
+
 function useTTSFallback(text) {
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -1268,174 +1724,357 @@ function nextReviewWord() {
 }
 
 function initEventListeners() {
-  document.getElementById('wordbookSelect').addEventListener('change', (e) => {
-    selectWordbook(e.target.value);
-  });
+  // 单词书选择按钮点击事件 - 跳转到单词书选择页面
+  const wordbookSelectBtn = document.getElementById('wordbookSelectBtn');
+  if (wordbookSelectBtn) {
+    wordbookSelectBtn.addEventListener('click', () => {
+      goToWordbookPage();
+    });
+  }
   
+  // 单词书选择页面返回按钮事件
+  const wordbookBackBtn = document.getElementById('wordbookBackBtn');
+  if (wordbookBackBtn) {
+    wordbookBackBtn.addEventListener('click', () => {
+      showPage('homePage');
+    });
+  }
+  
+  // 搜索相关事件监听器
   const searchInput = document.getElementById('searchWordInput');
   const searchButton = document.getElementById('searchButton');
   let searchTimeout;
   
-  searchInput.addEventListener('input', (e) => {
-    clearTimeout(searchTimeout);
-    const keyword = e.target.value.trim();
-    
-    if (keyword === '') {
-      document.getElementById('searchResults').style.display = 'none';
-      return;
-    }
-    
-    searchTimeout = setTimeout(async () => {
-      try {
-        const result = await ipcRenderer.invoke('search-word', keyword);
-        displaySearchResults(result);
-      } catch (error) {
-        console.error('搜索单词失败:', error);
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      const keyword = e.target.value.trim();
+      
+      if (keyword === '') {
+        const searchResults = document.getElementById('searchResults');
+        if (searchResults) {
+          searchResults.style.display = 'none';
+        }
+        return;
       }
-    }, 300);
-  });
-  
-  searchButton.addEventListener('click', async () => {
-    const keyword = searchInput.value.trim();
+      
+      searchTimeout = setTimeout(async () => {
+        try {
+          const result = api.searchWord(keyword);
+          displaySearchResults(result);
+        } catch (error) {
+          console.error('搜索单词失败:', error);
+        }
+      }, 300);
+    });
     
-    if (keyword === '') {
-      document.getElementById('searchResults').style.display = 'none';
-      return;
-    }
-    
-    try {
-      const result = await ipcRenderer.invoke('search-word', keyword);
-      displaySearchResults(result);
-    } catch (error) {
-      console.error('搜索单词失败:', error);
-    }
-  });
+    searchInput.addEventListener('focus', () => {
+      if (searchInput.value.trim() !== '') {
+        const searchResults = document.getElementById('searchResults');
+        if (searchResults) {
+          searchResults.style.display = 'block';
+        }
+      }
+    });
+  }
   
-  searchInput.addEventListener('focus', () => {
-    if (searchInput.value.trim() !== '') {
-      document.getElementById('searchResults').style.display = 'block';
-    }
-  });
+  if (searchButton) {
+    searchButton.addEventListener('click', async () => {
+      if (searchInput) {
+        const keyword = searchInput.value.trim();
+        
+        if (keyword === '') {
+          const searchResults = document.getElementById('searchResults');
+          if (searchResults) {
+            searchResults.style.display = 'none';
+          }
+          return;
+        }
+        
+        try {
+          const result = api.searchWord(keyword);
+          displaySearchResults(result);
+        } catch (error) {
+          console.error('搜索单词失败:', error);
+        }
+      }
+    });
+  }
   
+  // 点击页面其他地方关闭搜索结果
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.search-box')) {
-      document.getElementById('searchResults').style.display = 'none';
+      const searchResults = document.getElementById('searchResults');
+      if (searchResults) {
+        searchResults.style.display = 'none';
+      }
     }
   });
   
-  document.getElementById('settingsBtn').addEventListener('click', async () => {
-    await loadReviewSettings();
-    await loadBlurSettings();
-    showSettingsModal();
-  });
-  document.getElementById('closeSettingsBtn').addEventListener('click', hideSettingsModal);
+  // 设置相关事件监听器
+  const settingsBtn = document.getElementById('settingsBtn');
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', async () => {
+      await loadReviewSettings();
+      await loadBlurSettings();
+      await showSettingsModal();
+    });
+  }
   
-  document.getElementById('useCustomReviewSettings').addEventListener('change', (e) => {
-    document.getElementById('customReviewSettings').style.display = e.target.checked ? 'block' : 'none';
-  });
+  const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+  if (closeSettingsBtn) {
+    closeSettingsBtn.addEventListener('click', hideSettingsModal);
+  }
   
-  document.getElementById('saveReviewSettingsBtn').addEventListener('click', saveReviewSettings);
+  const useCustomReviewSettings = document.getElementById('useCustomReviewSettings');
+  if (useCustomReviewSettings) {
+    useCustomReviewSettings.addEventListener('change', (e) => {
+      const customSettingsDiv = document.getElementById('customReviewSettings');
+      if (customSettingsDiv) {
+        customSettingsDiv.style.display = e.target.checked ? 'block' : 'none';
+      }
+    });
+  }
   
+  const saveReviewSettingsBtn = document.getElementById('saveReviewSettingsBtn');
+  if (saveReviewSettingsBtn) {
+    saveReviewSettingsBtn.addEventListener('click', saveReviewSettings);
+  }
+  
+  // 毛玻璃效果相关事件监听器
   const buttonBlurInput = document.getElementById('buttonBlurIntensity');
-  const cardBlurInput = document.getElementById('cardBlurIntensity');
-  const searchBlurInput = document.getElementById('searchBlurIntensity');
-  const otherBlurInput = document.getElementById('otherBlurIntensity');
-  
   if (buttonBlurInput) {
     buttonBlurInput.addEventListener('input', (e) => {
-      document.getElementById('buttonBlurValue').textContent = e.target.value;
+      const buttonBlurValue = document.getElementById('buttonBlurValue');
+      if (buttonBlurValue) {
+        buttonBlurValue.textContent = e.target.value;
+      }
+      applyBlurSettings(); // 实时应用毛玻璃效果
     });
   }
   
+  const cardBlurInput = document.getElementById('cardBlurIntensity');
   if (cardBlurInput) {
     cardBlurInput.addEventListener('input', (e) => {
-      document.getElementById('cardBlurValue').textContent = e.target.value;
+      const cardBlurValue = document.getElementById('cardBlurValue');
+      if (cardBlurValue) {
+        cardBlurValue.textContent = e.target.value;
+      }
+      applyBlurSettings(); // 实时应用毛玻璃效果
     });
   }
   
+  const searchBlurInput = document.getElementById('searchBlurIntensity');
   if (searchBlurInput) {
     searchBlurInput.addEventListener('input', (e) => {
-      document.getElementById('searchBlurValue').textContent = e.target.value;
+      const searchBlurValue = document.getElementById('searchBlurValue');
+      if (searchBlurValue) {
+        searchBlurValue.textContent = e.target.value;
+      }
+      applyBlurSettings(); // 实时应用毛玻璃效果
     });
   }
   
+  const otherBlurInput = document.getElementById('otherBlurIntensity');
   if (otherBlurInput) {
     otherBlurInput.addEventListener('input', (e) => {
-      document.getElementById('otherBlurValue').textContent = e.target.value;
+      const otherBlurValue = document.getElementById('otherBlurValue');
+      if (otherBlurValue) {
+        otherBlurValue.textContent = e.target.value;
+      }
+      applyBlurSettings(); // 实时应用毛玻璃效果
     });
   }
   
   const backgroundBlurInput = document.getElementById('backgroundBlurIntensity');
   if (backgroundBlurInput) {
     backgroundBlurInput.addEventListener('input', (e) => {
-      document.getElementById('backgroundBlurValue').textContent = e.target.value;
+      const backgroundBlurValue = document.getElementById('backgroundBlurValue');
+      if (backgroundBlurValue) {
+        backgroundBlurValue.textContent = e.target.value;
+      }
+      applyBlurSettings(); // 实时应用毛玻璃效果
+      updateBlurEffect(); // 更新背景模糊效果
     });
   }
   
-  document.getElementById('saveBlurSettingsBtn').addEventListener('click', saveBlurSettings);
+  const saveBlurSettingsBtn = document.getElementById('saveBlurSettingsBtn');
+  if (saveBlurSettingsBtn) {
+    saveBlurSettingsBtn.addEventListener('click', saveBlurSettings);
+  }
   
-  document.getElementById('resetDatabaseBtn').addEventListener('click', async () => {
-    if (confirm('确定要重置数据库吗？这将删除所有学习数据和自定义词书，并重新导入默认词书。')) {
-      const result = await ipcRenderer.invoke('reset-database');
-      if (result.success) {
-        alert('数据库重置成功！');
-        await loadWordbooks();
-        currentWordbook = null;
-        showPage('homePage');
-      } else {
-        alert('重置失败：' + result.error);
+  // 字体颜色设置保存按钮
+  const saveThemeSettingsBtn = document.getElementById('saveThemeSettingsBtn');
+  if (saveThemeSettingsBtn) {
+    saveThemeSettingsBtn.addEventListener('click', saveFontColorSettings);
+  }
+  
+  // 保存学习设置事件监听器
+  const saveLearnSettingsBtn = document.getElementById('saveLearnSettingsBtn');
+  if (saveLearnSettingsBtn) {
+    saveLearnSettingsBtn.addEventListener('click', async () => {
+      const defaultLearnCount = document.getElementById('defaultLearnCount');
+      if (defaultLearnCount) {
+        const count = parseInt(defaultLearnCount.value);
+        if (isNaN(count) || count < 1 || count > 100) {
+          alert('请输入1-100之间的数字');
+          return;
+        }
+        
+        api.updateLearnSettings(count);
+        alert('学习设置已保存');
       }
-    }
-  });
+    });
+  }
   
-  document.getElementById('addWordBtn').addEventListener('click', showAddWordModal);
-  document.getElementById('closeAddWordModalBtn').addEventListener('click', hideAddWordModal);
-  document.getElementById('addWordCancelBtn').addEventListener('click', hideAddWordModal);
-  document.getElementById('addWordConfirmBtn').addEventListener('click', addWord);
+  // 重置数据库按钮
+  const resetDatabaseBtn = document.getElementById('resetDatabaseBtn');
+  if (resetDatabaseBtn) {
+    resetDatabaseBtn.addEventListener('click', async () => {
+      if (confirm('确定要重置数据库吗？这将删除所有学习数据和自定义词书，并重新导入默认词书。')) {
+        const result = api.resetDatabase();
+        if (result.success) {
+          alert('数据库重置成功！');
+          await loadWordbooks();
+          currentWordbook = null;
+          showPage('homePage');
+        } else {
+          alert('重置失败：' + result.error);
+        }
+      }
+    });
+  }
   
-  document.getElementById('closeEditWordModalBtn').addEventListener('click', hideEditWordModal);
-  document.getElementById('editWordCancelBtn').addEventListener('click', hideEditWordModal);
-  document.getElementById('editWordConfirmBtn').addEventListener('click', saveWord);
-  document.getElementById('editWordDeleteBtn').addEventListener('click', deleteWord);
+  // 音乐相关事件监听器
+  const musicBtn = document.getElementById('musicBtn');
+  if (musicBtn) {
+    musicBtn.addEventListener('click', () => {
+      // 显示音乐模态框
+      document.getElementById('musicModal').classList.add('active');
+    });
+  }
+
+  // 添加关闭音乐模态框的事件监听器
+  const closeMusicModalBtn = document.getElementById('closeMusicModalBtn');
+  if (closeMusicModalBtn) {
+    closeMusicModalBtn.addEventListener('click', () => {
+      document.getElementById('musicModal').classList.remove('active');
+    });
+  }
   
-  document.getElementById('closeWordDetailModalBtn').addEventListener('click', hideWordDetailModal);
+  // 单词添加相关事件监听器
+  const addWordBtn = document.getElementById('addWordBtn');
+  if (addWordBtn) {
+    addWordBtn.addEventListener('click', showAddWordModal);
+  }
   
-  document.getElementById('closeInputModalBtn').addEventListener('click', () => {
-    hideInputModal();
-    if (inputModalResolve) {
-      inputModalResolve(null);
-      inputModalResolve = null;
-    }
-  });
+  const closeAddWordModalBtn = document.getElementById('closeAddWordModalBtn');
+  if (closeAddWordModalBtn) {
+    closeAddWordModalBtn.addEventListener('click', hideAddWordModal);
+  }
   
-  document.getElementById('inputModalCancelBtn').addEventListener('click', () => {
-    hideInputModal();
-    if (inputModalResolve) {
-      inputModalResolve(null);
-      inputModalResolve = null;
-    }
-  });
+  const addWordCancelBtn = document.getElementById('addWordCancelBtn');
+  if (addWordCancelBtn) {
+    addWordCancelBtn.addEventListener('click', hideAddWordModal);
+  }
   
-  document.getElementById('inputModalConfirmBtn').addEventListener('click', () => {
-    const value = document.getElementById('inputModalValue').value;
-    hideInputModal();
-    if (inputModalResolve) {
-      inputModalResolve(value);
-      inputModalResolve = null;
-    }
-  });
+  const addWordConfirmBtn = document.getElementById('addWordConfirmBtn');
+  if (addWordConfirmBtn) {
+    addWordConfirmBtn.addEventListener('click', addWord);
+  }
   
-  document.getElementById('inputModalValue').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      document.getElementById('inputModalConfirmBtn').click();
-    }
-  });
+  // 单词编辑相关事件监听器
+  const closeEditWordModalBtn = document.getElementById('closeEditWordModalBtn');
+  if (closeEditWordModalBtn) {
+    closeEditWordModalBtn.addEventListener('click', hideEditWordModal);
+  }
   
-  document.getElementById('learnBtn').addEventListener('click', startLearn);
-  document.getElementById('reviewBtn').addEventListener('click', startReview);
-  document.getElementById('overviewBtn').addEventListener('click', showOverview);
-  document.getElementById('createWordbookBtn').addEventListener('click', showCreateWordbookModal);
+  const editWordCancelBtn = document.getElementById('editWordCancelBtn');
+  if (editWordCancelBtn) {
+    editWordCancelBtn.addEventListener('click', hideEditWordModal);
+  }
   
+  const editWordConfirmBtn = document.getElementById('editWordConfirmBtn');
+  if (editWordConfirmBtn) {
+    editWordConfirmBtn.addEventListener('click', saveWord);
+  }
+  
+  const editWordDeleteBtn = document.getElementById('editWordDeleteBtn');
+  if (editWordDeleteBtn) {
+    editWordDeleteBtn.addEventListener('click', deleteWord);
+  }
+  
+  // 单词详情模态框事件监听器
+  const closeWordDetailModalBtn = document.getElementById('closeWordDetailModalBtn');
+  if (closeWordDetailModalBtn) {
+    closeWordDetailModalBtn.addEventListener('click', hideWordDetailModal);
+  }
+  
+  // 输入模态框事件监听器
+  const closeInputModalBtn = document.getElementById('closeInputModalBtn');
+  if (closeInputModalBtn) {
+    closeInputModalBtn.addEventListener('click', () => {
+      hideInputModal();
+      if (inputModalResolve) {
+        inputModalResolve(null);
+        inputModalResolve = null;
+      }
+    });
+  }
+  
+  const inputModalCancelBtn = document.getElementById('inputModalCancelBtn');
+  if (inputModalCancelBtn) {
+    inputModalCancelBtn.addEventListener('click', () => {
+      hideInputModal();
+      if (inputModalResolve) {
+        inputModalResolve(null);
+        inputModalResolve = null;
+      }
+    });
+  }
+  
+  const inputModalConfirmBtn = document.getElementById('inputModalConfirmBtn');
+  if (inputModalConfirmBtn) {
+    inputModalConfirmBtn.addEventListener('click', () => {
+      const inputModalValue = document.getElementById('inputModalValue');
+      const value = inputModalValue ? inputModalValue.value : '';
+      hideInputModal();
+      if (inputModalResolve) {
+        inputModalResolve(value);
+        inputModalResolve = null;
+      }
+    });
+  }
+  
+  const inputModalValue = document.getElementById('inputModalValue');
+  if (inputModalValue) {
+    inputModalValue.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const inputModalConfirmBtn = document.getElementById('inputModalConfirmBtn');
+        if (inputModalConfirmBtn) {
+          inputModalConfirmBtn.click();
+        }
+      }
+    });
+  }
+  
+  // 学习和复习按钮事件监听器
+  const learnBtn = document.getElementById('learnBtn');
+  if (learnBtn) {
+    learnBtn.addEventListener('click', startLearn);
+  }
+  
+  const reviewBtn = document.getElementById('reviewBtn');
+  if (reviewBtn) {
+    reviewBtn.addEventListener('click', startReview);
+  }
+  
+  const createWordbookBtn = document.getElementById('createWordbookBtn');
+  if (createWordbookBtn) {
+    createWordbookBtn.addEventListener('click', showCreateWordbookModal);
+  }
+  
+  // 标签页按钮事件监听器
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       currentOverviewTab = btn.dataset.tab;
@@ -1444,21 +2083,58 @@ function initEventListeners() {
     });
   });
   
-  document.getElementById('learnBackBtn').addEventListener('click', () => showPage('homePage'));
-  document.getElementById('reviewBackBtn').addEventListener('click', () => showPage('homePage'));
-  document.getElementById('overviewBackBtn').addEventListener('click', () => showPage('homePage'));
+  // 返回按钮事件监听器
+  const learnBackBtn = document.getElementById('learnBackBtn');
+  if (learnBackBtn) {
+    learnBackBtn.addEventListener('click', () => showPage('homePage'));
+  }
   
-  document.getElementById('closeCreateWordbookModalBtn').addEventListener('click', hideCreateWordbookModal);
-  document.getElementById('createWordbookCancelBtn').addEventListener('click', hideCreateWordbookModal);
-  document.getElementById('createWordbookConfirmBtn').addEventListener('click', createWordbook);
-  document.getElementById('importWordBtn').addEventListener('click', () => importDocument('word'));
-  document.getElementById('importPdfBtn').addEventListener('click', () => importDocument('pdf'));
-  document.getElementById('addManualWordBtn').addEventListener('click', addManualWord);
+  const reviewBackBtn = document.getElementById('reviewBackBtn');
+  if (reviewBackBtn) {
+    reviewBackBtn.addEventListener('click', () => showPage('homePage'));
+  }
   
+  const overviewBackBtn = document.getElementById('overviewBackBtn');
+  if (overviewBackBtn) {
+    overviewBackBtn.addEventListener('click', () => showPage('homePage'));
+  }
+  
+  // 创建单词书模态框事件监听器
+  const closeCreateWordbookModalBtn = document.getElementById('closeCreateWordbookModalBtn');
+  if (closeCreateWordbookModalBtn) {
+    closeCreateWordbookModalBtn.addEventListener('click', hideCreateWordbookModal);
+  }
+  
+  const createWordbookCancelBtn = document.getElementById('createWordbookCancelBtn');
+  if (createWordbookCancelBtn) {
+    createWordbookCancelBtn.addEventListener('click', hideCreateWordbookModal);
+  }
+  
+  const createWordbookConfirmBtn = document.getElementById('createWordbookConfirmBtn');
+  if (createWordbookConfirmBtn) {
+    createWordbookConfirmBtn.addEventListener('click', createWordbook);
+  }
+  
+  const importWordBtn = document.getElementById('importWordBtn');
+  if (importWordBtn) {
+    importWordBtn.addEventListener('click', () => importDocument('word'));
+  }
+  
+  const importPdfBtn = document.getElementById('importPdfBtn');
+  if (importPdfBtn) {
+    importPdfBtn.addEventListener('click', () => importDocument('pdf'));
+  }
+  
+  const addManualWordBtn = document.getElementById('addManualWordBtn');
+  if (addManualWordBtn) {
+    addManualWordBtn.addEventListener('click', addManualWord);
+  }
+  
+  // 主题切换事件监听器
   document.querySelectorAll('.theme-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const enableTimeBased = document.getElementById('enableTimeBasedTheme').checked;
-      if (enableTimeBased) {
+      const enableTimeBased = document.getElementById('enableTimeBasedTheme');
+      if (enableTimeBased && enableTimeBased.checked) {
         return;
       }
       
@@ -1470,57 +2146,87 @@ function initEventListeners() {
       
       if (theme === 'dark') {
         document.body.classList.add('dark-theme');
-        document.getElementById('backgroundImageSelector').style.display = 'block';
+        const backgroundImageSelector = document.getElementById('backgroundImageSelector');
+        if (backgroundImageSelector) {
+          backgroundImageSelector.style.display = 'block';
+        }
         await loadBackgroundImages('night');
       } else if (theme === 'light') {
         document.body.classList.add('light-theme');
-        document.getElementById('backgroundImageSelector').style.display = 'block';
+        const backgroundImageSelector = document.getElementById('backgroundImageSelector');
+        if (backgroundImageSelector) {
+          backgroundImageSelector.style.display = 'block';
+        }
         await loadBackgroundImages('light');
       } else if (theme === 'custom') {
         document.body.classList.add('custom-theme');
-        document.getElementById('backgroundImageSelector').style.display = 'none';
+        const backgroundImageSelector = document.getElementById('backgroundImageSelector');
+        if (backgroundImageSelector) {
+          backgroundImageSelector.style.display = 'none';
+        }
       }
       
-      document.getElementById('customThemeSection').style.display = 
-        theme === 'custom' ? 'block' : 'none';
+      const customThemeSection = document.getElementById('customThemeSection');
+      if (customThemeSection) {
+        customThemeSection.style.display = theme === 'custom' ? 'block' : 'none';
+      }
       
       saveThemeSettings(theme);
       updateBlurEffect();
     });
   });
   
-  document.getElementById('bgImageInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const backgroundLayer = document.getElementById('backgroundLayer');
-        backgroundLayer.style.background = `url(${event.target.result})`;
-        backgroundLayer.style.backgroundSize = 'cover';
-        backgroundLayer.style.backgroundPosition = 'center';
-        backgroundLayer.style.backgroundRepeat = 'no-repeat';
-        applyBlurSettings();
-      };
-      reader.readAsDataURL(file);
-    }
-  });
+  // 背景图片选择事件监听器
+  const bgImageInput = document.getElementById('bgImageInput');
+  if (bgImageInput) {
+    bgImageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const backgroundLayer = document.getElementById('backgroundLayer');
+          if (backgroundLayer) {
+            backgroundLayer.style.background = `url(${event.target.result})`;
+            backgroundLayer.style.backgroundSize = 'cover';
+            backgroundLayer.style.backgroundPosition = 'center';
+            backgroundLayer.style.backgroundRepeat = 'no-repeat';
+            applyBlurSettings();
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
   
-  document.getElementById('enableBlurEffect').addEventListener('change', (e) => {
-    document.getElementById('blurIntensitySection').style.display = e.target.checked ? 'block' : 'none';
-    applyBlurSettings();
-  });
+  // 毛玻璃效果开关事件监听器
+  const enableBlurEffect = document.getElementById('enableBlurEffect');
+  if (enableBlurEffect) {
+    enableBlurEffect.addEventListener('change', (e) => {
+      const blurIntensitySection = document.getElementById('blurIntensitySection');
+      if (blurIntensitySection) {
+        blurIntensitySection.style.display = e.target.checked ? 'block' : 'none';
+      }
+      applyBlurSettings(); // 实时应用毛玻璃效果
+      updateBlurEffect(); // 更新背景模糊效果
+    });
+  }
   
-  document.getElementById('enableTimeBasedTheme').addEventListener('change', (e) => {
-    const enabled = e.target.checked;
-    localStorage.setItem('enableTimeBasedTheme', enabled);
-    
-    if (enabled) {
-      startTimeBasedTheme();
-    } else {
-      stopTimeBasedTheme();
-    }
-  });
+  // 基于时间的主题切换事件监听器
+  const enableTimeBasedTheme = document.getElementById('enableTimeBasedTheme');
+  if (enableTimeBasedTheme) {
+    enableTimeBasedTheme.addEventListener('change', (e) => {
+      const enabled = e.target.checked;
+      localStorage.setItem('enableTimeBasedTheme', enabled);
+      
+      if (enabled) {
+        startTimeBasedTheme();
+      } else {
+        stopTimeBasedTheme();
+      }
+    });
+  }
   
+  // 模态框点击外部关闭事件监听器
   document.querySelectorAll('.modal').forEach(modal => {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
@@ -1531,11 +2237,14 @@ function initEventListeners() {
 }
 
 function updateBlurEffect() {
+  // 检查必要元素是否存在
   const backgroundLayer = document.getElementById('backgroundLayer');
   const enableBlur = document.getElementById('enableBlurEffect');
+  const backgroundBlurInput = document.getElementById('backgroundBlurIntensity');
   
   if (enableBlur && backgroundLayer) {
-    const blurIntensity = blurSettings ? blurSettings.background_blur : 0;
+    // 获取当前滑块的实时值
+    const blurIntensity = backgroundBlurInput ? parseInt(backgroundBlurInput.value) || 0 : (blurSettings?.background_blur || 0);
     if (enableBlur.checked) {
       backgroundLayer.style.filter = `blur(${blurIntensity}px)`;
       backgroundLayer.style.webkitFilter = `blur(${blurIntensity}px)`;
@@ -1545,12 +2254,20 @@ function updateBlurEffect() {
     }
   }
   
-  applyBlurSettings();
+  try {
+    // 尝试应用毛玻璃效果，如果失败则忽略
+    applyBlurSettings();
+  } catch (error) {
+    console.error('应用毛玻璃效果失败:', error);
+  }
   
-  localStorage.setItem('blurSettings', JSON.stringify({
-    enabled: enableBlur ? enableBlur.checked : false,
-    intensity: blurSettings ? blurSettings.background_blur : 0
-  }));
+  // 保存毛玻璃设置
+  if (enableBlur) {
+    localStorage.setItem('blurSettings', JSON.stringify({
+      enabled: enableBlur.checked,
+      intensity: backgroundBlurInput ? parseInt(backgroundBlurInput.value) || 0 : (blurSettings?.background_blur || 0)
+    }));
+  }
 }
 
 function loadBackgroundBlurSettings() {
@@ -1661,7 +2378,7 @@ async function loadBackgroundImages(theme) {
   
   backgroundImages.innerHTML = '';
   
-  const imageNames = await ipcRenderer.invoke('get-background-images', theme);
+  const imageNames = api.getBackgroundImages(theme);
   
   if (imageNames.length === 0) {
     backgroundImages.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 20px;">暂无背景图片</div>';
@@ -1672,7 +2389,7 @@ async function loadBackgroundImages(theme) {
   const defaultBackground = savedBackground || imageNames[0];
   
   const backgroundLayer = document.getElementById('backgroundLayer');
-  const backgroundUrl = await ipcRenderer.invoke('get-background-url', theme, defaultBackground);
+  const backgroundUrl = api.getBackgroundUrl(theme, defaultBackground);
   backgroundLayer.style.background = `url(${backgroundUrl})`;
   backgroundLayer.style.backgroundSize = 'cover';
   backgroundLayer.style.backgroundPosition = 'center';
@@ -1684,7 +2401,7 @@ async function loadBackgroundImages(theme) {
     item.dataset.image = imageName;
     
     const img = document.createElement('img');
-    const imageUrl = await ipcRenderer.invoke('get-background-url', theme, imageName);
+    const imageUrl = api.getBackgroundUrl(theme, imageName);
     img.src = imageUrl;
     img.alt = imageName;
     
@@ -1700,7 +2417,7 @@ async function loadBackgroundImages(theme) {
       item.classList.add('active');
       
       const backgroundLayer = document.getElementById('backgroundLayer');
-      const backgroundUrl = await ipcRenderer.invoke('get-background-url', theme, imageName);
+      const backgroundUrl = api.getBackgroundUrl(theme, imageName);
       backgroundLayer.style.background = `url(${backgroundUrl})`;
       backgroundLayer.style.backgroundSize = 'cover';
       backgroundLayer.style.backgroundPosition = 'center';
@@ -1734,45 +2451,136 @@ function hideCreateWordbookModal() {
 }
 
 async function importDocument(type) {
-  document.getElementById('manualInputSection').style.display = 'none';
-  document.getElementById('importProgressSection').style.display = 'block';
-  document.getElementById('importProgressText').textContent = '正在选择文件...';
-  document.getElementById('importProgressBar').style.width = '10%';
-  
-  try {
-    const result = await ipcRenderer.invoke('parse-document', type);
-    
-    document.getElementById('importProgressText').textContent = '正在解析文档...';
-    document.getElementById('importProgressBar').style.width = '30%';
-    
-    document.getElementById('importProgressText').textContent = `找到 ${result.length} 个单词`;
-    document.getElementById('importProgressBar').style.width = '60%';
-    
-    manualWords = result;
-    displayManualWords();
-    
-    document.getElementById('importProgressText').textContent = '导入完成！';
-    document.getElementById('importProgressBar').style.width = '100%';
-    
-    setTimeout(() => {
-      document.getElementById('importProgressSection').style.display = 'none';
-      document.getElementById('manualInputSection').style.display = 'block';
-    }, 1000);
-    
-  } catch (error) {
-    document.getElementById('importProgressText').textContent = `导入失败: ${error.message}`;
-    document.getElementById('importProgressBar').style.width = '0%';
-    setTimeout(() => {
-      document.getElementById('importProgressSection').style.display = 'none';
-      document.getElementById('manualInputSection').style.display = 'block';
-    }, 2000);
-  }
+  return new Promise((resolve, reject) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = type === 'pdf' ? '.pdf' : '.docx,.doc';
+
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        reject(new Error('未选择文件'));
+        return;
+      }
+
+      document.getElementById('manualInputSection').style.display = 'none';
+      document.getElementById('importProgressSection').style.display = 'block';
+      document.getElementById('importProgressText').textContent = '正在读取文件...';
+      document.getElementById('importProgressBar').style.width = '10%';
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        document.getElementById('importProgressText').textContent = '正在解析文档...';
+        document.getElementById('importProgressBar').style.width = '30%';
+
+        let text = '';
+
+        if (type === 'pdf') {
+          const pdfjsLib = window.pdfjsLib;
+          if (pdfjsLib) {
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            let fullText = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const content = await page.getTextContent();
+              const strings = content.items.map(item => item.str);
+              fullText += strings.join(' ') + '\n';
+            }
+            text = fullText;
+          }
+        } else {
+          const mammoth = window.mammoth;
+          if (mammoth) {
+            const result = await mammoth.extractRawText({ arrayBuffer });
+            text = result.value;
+          }
+        }
+
+        document.getElementById('importProgressBar').style.width = '60%';
+
+        const lines = text.split('\n').filter(line => line.trim());
+        const words = [];
+
+        for (const line of lines) {
+          const parts = line.split(/[,，、\t]+/).map(p => p.trim()).filter(p => p);
+          if (parts.length >= 2) {
+            words.push({
+              english: parts[0],
+              chinese: parts.slice(1).join(', ')
+            });
+          }
+        }
+
+        document.getElementById('importProgressText').textContent = `找到 ${words.length} 个单词`;
+        document.getElementById('importProgressBar').style.width = '100%';
+
+        manualWords = words;
+        displayManualWords();
+
+        document.getElementById('importProgressText').textContent = '导入完成！';
+
+        setTimeout(() => {
+          document.getElementById('importProgressSection').style.display = 'none';
+          document.getElementById('manualInputSection').style.display = 'block';
+        }, 1000);
+
+        resolve(words);
+
+      } catch (error) {
+        document.getElementById('importProgressText').textContent = `导入失败: ${error.message}`;
+        document.getElementById('importProgressBar').style.width = '0%';
+        setTimeout(() => {
+          document.getElementById('importProgressSection').style.display = 'none';
+          document.getElementById('manualInputSection').style.display = 'block';
+        }, 2000);
+        reject(error);
+      }
+    };
+
+    input.click();
+  });
 }
 
 async function fetchPhonetic(word) {
   try {
-    const result = await ipcRenderer.invoke('fetch-phonetic', word);
-    return result;
+    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    if (data && data[0]) {
+      const phonetics = data[0].phonetics || [];
+      let uk = '', us = '';
+
+      for (const p of phonetics) {
+        if (p.text && !uk && p.text.includes('/')) {
+          if (p.text.includes('UK') || p.text.toLowerCase().includes('br')) {
+            uk = p.text.match(/\/.*?\//g)?.[0] || '';
+          }
+        }
+        if (p.text && !us && p.text.includes('/')) {
+          if (p.text.includes('US') || p.text.toLowerCase().includes('am')) {
+            us = p.text.match(/\/.*?\//g)?.[0] || '';
+          }
+        }
+      }
+
+      if (!uk) {
+        const ukPhonetic = phonetics.find(p => p.text?.includes('/') && (p.text.includes('UK') || !p.text.includes('US')));
+        if (ukPhonetic) {
+          uk = ukPhonetic.text?.match(/\/.*?\//g)?.[0] || '';
+        }
+      }
+      if (!us) {
+        const usPhonetic = phonetics.find(p => p.text?.includes('US') || p.text?.toLowerCase().includes('am'));
+        if (usPhonetic) {
+          us = usPhonetic.text?.match(/\/.*?\//g)?.[0] || '';
+        }
+      }
+
+      return { uk, us };
+    }
+    return { uk: '', us: '' };
   } catch (error) {
     console.error('获取音标失败:', error);
     return { uk: '', us: '' };
@@ -1836,7 +2644,7 @@ async function createWordbook() {
     document.getElementById('createWordbookConfirmBtn').textContent = '创建中...';
     document.getElementById('createWordbookConfirmBtn').disabled = true;
     
-    await ipcRenderer.invoke('create-custom-wordbook', bookName, manualWords);
+    api.createCustomWordbook(bookName, manualWords);
     
     alert('单词书创建成功！');
     hideCreateWordbookModal();
@@ -1850,10 +2658,57 @@ async function createWordbook() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  api.init();
   loadWordbooks();
   initEventListeners();
   await loadBlurSettings();
+  await loadFontColorSettings();
+  initColorPickerListeners();
   loadThemeSettings();
   loadBackgroundBlurSettings();
   updateBlurEffect();
+  applyFontColorSettings();
+  initFullscreenMode();
+});
+
+function initFullscreenMode() {
+  const enableFullscreenCheckbox = document.getElementById('enableFullscreen');
+
+  if (enableFullscreenCheckbox) {
+    const savedFullscreen = localStorage.getItem('enableFullscreen') === 'true';
+    enableFullscreenCheckbox.checked = savedFullscreen;
+
+    enableFullscreenCheckbox.addEventListener('change', (e) => {
+      const isEnabled = e.target.checked;
+      localStorage.setItem('enableFullscreen', isEnabled);
+
+      if (isEnabled) {
+        document.getElementById('app').classList.add('fullscreen-mode');
+      } else {
+        document.getElementById('app').classList.remove('fullscreen-mode');
+      }
+    });
+
+    if (savedFullscreen) {
+      document.getElementById('app').classList.add('fullscreen-mode');
+    }
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'F11') {
+    e.preventDefault();
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen();
+    }
+  }
+
+  if (e.key === 'Escape' && document.fullscreenElement) {
+    const enableFullscreen = localStorage.getItem('enableFullscreen') === 'true';
+    if (!enableFullscreen) {
+      document.exitFullscreen();
+    }
+  }
 });

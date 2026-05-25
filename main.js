@@ -18,6 +18,49 @@ let db;
 let dbFilePath;
 let audioCachePath;
 
+// 网络请求配置
+const axiosConfig = {
+  timeout: 5000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+};
+
+// 获取例句和短语的网络请求函数
+async function fetchWordDetails(word) {
+  try {
+    // 这里使用模拟数据，实际项目中可以替换为真实API
+    console.log(`搜索单词 ${word} 的例句和短语...`);
+    
+    // 模拟API响应
+    const mockExamples = [
+      { example_text: `The ${word} is very important.`, translation: `${word} 非常重要。` },
+      { example_text: `I like to use ${word} every day.`, translation: `我喜欢每天使用 ${word}。` },
+      { example_text: `This is a good example of ${word}.`, translation: `这是 ${word} 的一个好例子。` }
+    ];
+    
+    const mockPhrases = [
+      { phrase: `${word} example`, translation: `${word} 例子` },
+      { phrase: `use ${word}`, translation: `使用 ${word}` },
+      { phrase: `${word} usage`, translation: `${word} 用法` }
+    ];
+    
+    // 模拟网络延迟
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return {
+      examples: mockExamples,
+      phrases: mockPhrases
+    };
+  } catch (error) {
+    console.error(`获取单词 ${word} 详情失败:`, error);
+    return {
+      examples: [],
+      phrases: []
+    };
+  }
+}
+
 async function initDatabase() {
   try {
     const userDataPath = app.getPath('userData');
@@ -89,6 +132,131 @@ async function initDatabase() {
         }
       }
       
+      // 添加word_examples表
+      if (!tableNames.includes('word_examples')) {
+        console.log('添加word_examples表...');
+        db.run(`
+          CREATE TABLE word_examples (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            word_id INTEGER,
+            example_text TEXT,
+            translation TEXT,
+            source TEXT DEFAULT 'api',
+            FOREIGN KEY (word_id) REFERENCES word(word_id)
+          );
+        `);
+        saveDatabase();
+      }
+      
+      // 添加word_phrases表
+      if (!tableNames.includes('word_phrases')) {
+        console.log('添加word_phrases表...');
+        db.run(`
+          CREATE TABLE word_phrases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            word_id INTEGER,
+            phrase TEXT,
+            translation TEXT,
+            source TEXT DEFAULT 'api',
+            FOREIGN KEY (word_id) REFERENCES word(word_id)
+          );
+        `);
+        saveDatabase();
+      }
+      
+      // 添加音乐收藏表
+      if (!tableNames.includes('music_favorites')) {
+        console.log('添加music_favorites表...');
+        db.run(`
+          CREATE TABLE music_favorites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            song_id TEXT NOT NULL,
+            song_name TEXT NOT NULL,
+            artist TEXT NOT NULL,
+            source TEXT NOT NULL,
+            source_type TEXT NOT NULL,
+            url_id TEXT NOT NULL,
+            pic_id TEXT,
+            lyric_id TEXT,
+            added_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+          );
+        `);
+        saveDatabase();
+      }
+      
+      // 添加音乐播放历史表
+      if (!tableNames.includes('music_history')) {
+        console.log('添加music_history表...');
+        db.run(`
+          CREATE TABLE music_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            song_id TEXT NOT NULL,
+            song_name TEXT NOT NULL,
+            artist TEXT NOT NULL,
+            source TEXT NOT NULL,
+            source_type TEXT NOT NULL,
+            url_id TEXT NOT NULL,
+            pic_id TEXT,
+            lyric_id TEXT,
+            played_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+            play_count INTEGER NOT NULL DEFAULT 1
+          );
+        `);
+        saveDatabase();
+      }
+      
+      // 检查word表是否有is_local和last_updated列
+      if (tableNames.includes('word')) {
+        const wordColumns = db.exec("PRAGMA table_info(word)");
+        const wordColumnNames = wordColumns[0] ? wordColumns[0].values.map(row => row[1]) : [];
+        
+        if (!wordColumnNames.includes('is_local')) {
+          console.log('添加is_local列到word表...');
+          db.run(`ALTER TABLE word ADD COLUMN is_local INTEGER DEFAULT 1`);
+          saveDatabase();
+        }
+        
+        if (!wordColumnNames.includes('last_updated')) {
+          console.log('添加last_updated列到word表...');
+          // SQLite不允许添加带有非恒定默认值的列，所以先添加列，再更新默认值
+          db.run(`ALTER TABLE word ADD COLUMN last_updated TEXT DEFAULT ''`);
+          // 为现有行设置默认值
+          db.run(`UPDATE word SET last_updated = CURRENT_TIMESTAMP WHERE last_updated = ''`);
+          saveDatabase();
+        }
+      }
+      
+      // 添加theme_settings表
+      if (!tableNames.includes('theme_settings')) {
+        console.log('添加theme_settings表...');
+        db.run(`
+          CREATE TABLE theme_settings (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            light_text_primary TEXT DEFAULT '#000000',
+            light_text_secondary TEXT DEFAULT '#333333',
+            dark_text_primary TEXT DEFAULT '#ffffff',
+            dark_text_secondary TEXT DEFAULT '#b0b0b0'
+          );
+        `);
+        
+        db.run(`INSERT INTO theme_settings (id, light_text_primary, light_text_secondary, dark_text_primary, dark_text_secondary) VALUES (1, '#000000', '#333333', '#ffffff', '#b0b0b0')`);
+      }
+      
+      // 添加learn_settings表
+      if (!tableNames.includes('learn_settings')) {
+        console.log('添加learn_settings表...');
+        db.run(`
+          CREATE TABLE learn_settings (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            default_learn_count INTEGER DEFAULT 20,
+            show_learn_count_popup INTEGER DEFAULT 0
+          );
+        `);
+        
+        db.run(`INSERT INTO learn_settings (id, default_learn_count, show_learn_count_popup) VALUES (1, 20, 0)`);
+        saveDatabase();
+      }
+      
       const wordbookResult = db.exec('SELECT COUNT(*) as count FROM word_book');
       const wordbookCount = wordbookResult[0] && wordbookResult[0].values[0] && wordbookResult[0].values[0][0];
       
@@ -152,6 +320,40 @@ async function initDatabase() {
           background_blur INTEGER DEFAULT 0
         );
       `);
+      
+      db.run(`
+        CREATE TABLE IF NOT EXISTS word_examples (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          word_id INTEGER,
+          example_text TEXT,
+          translation TEXT,
+          source TEXT DEFAULT 'api',
+          FOREIGN KEY (word_id) REFERENCES word(word_id)
+        );
+      `);
+      
+      db.run(`
+        CREATE TABLE IF NOT EXISTS word_phrases (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          word_id INTEGER,
+          phrase TEXT,
+          translation TEXT,
+          source TEXT DEFAULT 'api',
+          FOREIGN KEY (word_id) REFERENCES word(word_id)
+        );
+      `);
+      
+      db.run(`
+        CREATE TABLE IF NOT EXISTS theme_settings (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          light_text_primary TEXT DEFAULT '#000000',
+          light_text_secondary TEXT DEFAULT '#333333',
+          dark_text_primary TEXT DEFAULT '#ffffff',
+          dark_text_secondary TEXT DEFAULT '#b0b0b0'
+        );
+      `);
+      
+      db.run(`INSERT INTO theme_settings (id, light_text_primary, light_text_secondary, dark_text_primary, dark_text_secondary) VALUES (1, '#000000', '#333333', '#ffffff', '#b0b0b0')`);
       
       await importDefaultWordbooks();
       saveDatabase();
@@ -867,6 +1069,125 @@ ipcMain.handle('update-blur-settings', async (event, buttonBlur, cardBlur, searc
   return { success: true };
 });
 
+// 获取主题设置
+ipcMain.handle('get-theme-settings', async () => {
+  try {
+    const settings = queryToObject(`SELECT * FROM theme_settings WHERE id = 1`);
+    if (!settings) {
+      return {
+        light_text_primary: '#000000',
+        light_text_secondary: '#333333',
+        dark_text_primary: '#ffffff',
+        dark_text_secondary: '#b0b0b0'
+      };
+    }
+    return settings;
+  } catch (error) {
+    console.error('获取主题设置失败:', error);
+    return {
+      light_text_primary: '#000000',
+      light_text_secondary: '#333333',
+      dark_text_primary: '#ffffff',
+      dark_text_secondary: '#b0b0b0'
+    };
+  }
+});
+
+// 保存主题设置
+ipcMain.handle('save-theme-settings', async (event, settings) => {
+  try {
+    const existing = queryToObject(`SELECT * FROM theme_settings WHERE id = 1`);
+    
+    if (existing) {
+      db.run(`
+        UPDATE theme_settings 
+        SET light_text_primary = ?, light_text_secondary = ?, dark_text_primary = ?, dark_text_secondary = ?
+        WHERE id = 1
+      `, [settings.light_text_primary, settings.light_text_secondary, settings.dark_text_primary, settings.dark_text_secondary]);
+    } else {
+      db.run(`
+        INSERT INTO theme_settings (id, light_text_primary, light_text_secondary, dark_text_primary, dark_text_secondary)
+        VALUES (1, ?, ?, ?, ?)
+      `, [settings.light_text_primary, settings.light_text_secondary, settings.dark_text_primary, settings.dark_text_secondary]);
+    }
+    
+    saveDatabase();
+    return { success: true };
+  } catch (error) {
+    console.error('保存主题设置失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-learn-settings', async () => {
+  try {
+    const settings = queryToObject(`SELECT * FROM learn_settings WHERE id = 1`);
+    if (!settings) {
+      return {
+        default_learn_count: 20,
+        show_learn_count_popup: 1
+      };
+    }
+    return settings;
+  } catch (error) {
+    console.error('获取学习设置失败:', error);
+    return {
+      default_learn_count: 20,
+      show_learn_count_popup: 1
+    };
+  }
+});
+
+ipcMain.handle('update-learn-settings', async (event, defaultLearnCount) => {
+  try {
+    const existing = queryToObject(`SELECT * FROM learn_settings WHERE id = 1`);
+    
+    if (existing) {
+      db.run(`
+        UPDATE learn_settings 
+        SET default_learn_count = ?
+        WHERE id = 1
+      `, [defaultLearnCount]);
+    } else {
+      db.run(`
+        INSERT INTO learn_settings (id, default_learn_count, show_learn_count_popup)
+        VALUES (1, ?, 1)
+      `, [defaultLearnCount]);
+    }
+    
+    saveDatabase();
+    return { success: true };
+  } catch (error) {
+    console.error('更新学习设置失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('disable-learn-count-popup', async () => {
+  try {
+    const existing = queryToObject(`SELECT * FROM learn_settings WHERE id = 1`);
+    
+    if (existing) {
+      db.run(`
+        UPDATE learn_settings 
+        SET show_learn_count_popup = 0
+        WHERE id = 1
+      `);
+    } else {
+      db.run(`
+        INSERT INTO learn_settings (id, default_learn_count, show_learn_count_popup)
+        VALUES (1, 20, 0)
+      `);
+    }
+    
+    saveDatabase();
+    return { success: true };
+  } catch (error) {
+    console.error('禁用学习数量弹窗失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('create-wordbook', async (event, bookName, coverUrl, sourceType) => {
   db.run(`
     INSERT INTO word_book (book_name, cover_url, source_type, total_count, mastered_count)
@@ -1188,6 +1509,309 @@ ipcMain.handle('get-background-url', async (event, theme, imageName) => {
   } catch (error) {
     console.error('读取背景图片失败:', error);
     return '';
+  }
+});
+
+// 搜索单词的例句和短语
+ipcMain.handle('search-word-details', async (event, word, wordId) => {
+  try {
+    // 先检查本地是否已有数据
+    const localExamplesResult = db.exec(`SELECT * FROM word_examples WHERE word_id = ${wordId}`);
+    const localPhrasesResult = db.exec(`SELECT * FROM word_phrases WHERE word_id = ${wordId}`);
+    
+    const localExamples = localExamplesResult[0] ? localExamplesResult[0].values.map(row => ({
+      id: row[0],
+      word_id: row[1],
+      example_text: row[2],
+      translation: row[3],
+      source: row[4]
+    })) : [];
+    
+    const localPhrases = localPhrasesResult[0] ? localPhrasesResult[0].values.map(row => ({
+      id: row[0],
+      word_id: row[1],
+      phrase: row[2],
+      translation: row[3],
+      source: row[4]
+    })) : [];
+    
+    // 如果本地有数据，直接返回
+    if (localExamples.length > 0 && localPhrases.length > 0) {
+      return {
+        examples: localExamples,
+        phrases: localPhrases,
+        source: 'local'
+      };
+    }
+    
+    // 本地没有数据，从网络获取
+    const wordDetails = await fetchWordDetails(word);
+    
+    // 保存到本地数据库
+    const examples = wordDetails.examples;
+    const phrases = wordDetails.phrases;
+    
+    // 保存例句
+    examples.forEach(example => {
+      // 转义单引号
+      const escapedExample = example.example_text.replace(/'/g, "''");
+      const escapedTranslation = example.translation.replace(/'/g, "''");
+      db.run(`
+        INSERT INTO word_examples (word_id, example_text, translation, source)
+        VALUES (${wordId}, '${escapedExample}', '${escapedTranslation}', 'api')
+      `);
+    });
+    
+    // 保存短语
+    phrases.forEach(phrase => {
+      // 转义单引号
+      const escapedPhrase = phrase.phrase.replace(/'/g, "''");
+      const escapedTranslation = phrase.translation.replace(/'/g, "''");
+      db.run(`
+        INSERT INTO word_phrases (word_id, phrase, translation, source)
+        VALUES (${wordId}, '${escapedPhrase}', '${escapedTranslation}', 'api')
+      `);
+    });
+    
+    // 更新word表的is_local和last_updated
+    db.run(`
+      UPDATE word SET is_local = 0, last_updated = CURRENT_TIMESTAMP WHERE word_id = ${wordId}
+    `);
+    
+    saveDatabase();
+    
+    return {
+      examples: examples.map((example, index) => ({
+        id: index + 1,
+        word_id: wordId,
+        ...example,
+        source: 'api'
+      })),
+      phrases: phrases.map((phrase, index) => ({
+        id: index + 1,
+        word_id: wordId,
+        ...phrase,
+        source: 'api'
+      })),
+      source: 'api'
+    };
+  } catch (error) {
+    console.error('搜索单词详情失败:', error);
+    return {
+      examples: [],
+      phrases: [],
+      source: 'error'
+    };
+  }
+});
+
+// 获取本地保存的例句
+ipcMain.handle('get-local-examples', async (event, wordId) => {
+  try {
+    const result = db.exec(`SELECT * FROM word_examples WHERE word_id = ${wordId}`);
+    return result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      word_id: row[1],
+      example_text: row[2],
+      translation: row[3],
+      source: row[4]
+    })) : [];
+  } catch (error) {
+    console.error('获取本地例句失败:', error);
+    return [];
+  }
+});
+
+// 获取本地保存的短语
+ipcMain.handle('get-local-phrases', async (event, wordId) => {
+  try {
+    const result = db.exec(`SELECT * FROM word_phrases WHERE word_id = ${wordId}`);
+    return result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      word_id: row[1],
+      phrase: row[2],
+      translation: row[3],
+      source: row[4]
+    })) : [];
+  } catch (error) {
+    console.error('获取本地短语失败:', error);
+    return [];
+  }
+});
+
+// 保存例句到本地
+ipcMain.handle('save-word-examples', async (event, wordId, examples) => {
+  try {
+    examples.forEach(example => {
+      // 转义单引号
+      const escapedExample = example.example_text.replace(/'/g, "''");
+      const escapedTranslation = example.translation.replace(/'/g, "''");
+      db.run(`
+        INSERT INTO word_examples (word_id, example_text, translation, source)
+        VALUES (${wordId}, '${escapedExample}', '${escapedTranslation}', 'api')
+      `);
+    });
+    saveDatabase();
+    return true;
+  } catch (error) {
+    console.error('保存例句失败:', error);
+    return false;
+  }
+});
+
+// 音乐收藏相关IPC处理
+
+// 添加音乐到收藏
+ipcMain.handle('add-music-favorite', async (event, music) => {
+  try {
+    // 检查是否已存在
+    const existing = db.exec(`SELECT id FROM music_favorites WHERE song_id = '${music.song_id}' AND source = '${music.source}'`);
+    if (existing[0] && existing[0].values.length > 0) {
+      return { success: true, message: '已存在于收藏中' };
+    }
+    
+    // 转义单引号
+    const escapedSongName = music.song_name.replace(/'/g, "''");
+    const escapedArtist = music.artist.replace(/'/g, "''");
+    
+    db.run(`
+      INSERT INTO music_favorites (song_id, song_name, artist, source, source_type, url_id, pic_id, lyric_id)
+      VALUES ('${music.song_id}', '${escapedSongName}', '${escapedArtist}', '${music.source}', '${music.source_type}', '${music.url_id}', '${music.pic_id || ''}', '${music.lyric_id || ''}')
+    `);
+    saveDatabase();
+    return { success: true };
+  } catch (error) {
+    console.error('添加音乐收藏失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 移除音乐收藏
+ipcMain.handle('remove-music-favorite', async (event, songId, source) => {
+  try {
+    db.run(`DELETE FROM music_favorites WHERE song_id = '${songId}' AND source = '${source}'`);
+    saveDatabase();
+    return { success: true };
+  } catch (error) {
+    console.error('移除音乐收藏失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 获取收藏的音乐列表
+ipcMain.handle('get-music-favorites', async () => {
+  try {
+    const result = db.exec('SELECT * FROM music_favorites ORDER BY added_at DESC');
+    if (!result || result.length === 0) return [];
+    
+    const columns = result[0].columns;
+    return result[0].values.map(row => {
+      const obj = {};
+      columns.forEach((col, i) => {
+        obj[col] = row[i];
+      });
+      return obj;
+    });
+  } catch (error) {
+    console.error('获取音乐收藏失败:', error);
+    return [];
+  }
+});
+
+// 检查音乐是否已收藏
+ipcMain.handle('check-music-favorite', async (event, songId, source) => {
+  try {
+    const result = db.exec(`SELECT id FROM music_favorites WHERE song_id = '${songId}' AND source = '${source}'`);
+    return result[0] && result[0].values.length > 0;
+  } catch (error) {
+    console.error('检查音乐收藏失败:', error);
+    return false;
+  }
+});
+
+// 音乐播放历史相关IPC处理
+
+// 添加音乐播放历史
+ipcMain.handle('add-music-history', async (event, music) => {
+  try {
+    // 检查是否已存在，如果存在则更新播放次数和时间
+    const existing = db.exec(`SELECT id, play_count FROM music_history WHERE song_id = '${music.song_id}' AND source = '${music.source}'`);
+    
+    // 转义单引号
+    const escapedSongName = music.song_name.replace(/'/g, "''");
+    const escapedArtist = music.artist.replace(/'/g, "''");
+    
+    if (existing[0] && existing[0].values.length > 0) {
+      const id = existing[0].values[0][0];
+      const playCount = existing[0].values[0][1] + 1;
+      db.run(`
+        UPDATE music_history 
+        SET play_count = ${playCount}, played_at = strftime('%s', 'now') 
+        WHERE id = ${id}
+      `);
+    } else {
+      db.run(`
+        INSERT INTO music_history (song_id, song_name, artist, source, source_type, url_id, pic_id, lyric_id)
+        VALUES ('${music.song_id}', '${escapedSongName}', '${escapedArtist}', '${music.source}', '${music.source_type}', '${music.url_id}', '${music.pic_id || ''}', '${music.lyric_id || ''}')
+      `);
+    }
+    saveDatabase();
+    return { success: true };
+  } catch (error) {
+    console.error('添加音乐播放历史失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 获取音乐播放历史
+ipcMain.handle('get-music-history', async (event, limit = 100) => {
+  try {
+    const result = db.exec(`SELECT * FROM music_history ORDER BY played_at DESC LIMIT ${limit}`);
+    if (!result || result.length === 0) return [];
+    
+    const columns = result[0].columns;
+    return result[0].values.map(row => {
+      const obj = {};
+      columns.forEach((col, i) => {
+        obj[col] = row[i];
+      });
+      return obj;
+    });
+  } catch (error) {
+    console.error('获取音乐播放历史失败:', error);
+    return [];
+  }
+});
+
+// 清空音乐播放历史
+ipcMain.handle('clear-music-history', async () => {
+  try {
+    db.run('DELETE FROM music_history');
+    saveDatabase();
+    return { success: true };
+  } catch (error) {
+    console.error('清空音乐播放历史失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 保存短语到本地
+ipcMain.handle('save-word-phrases', async (event, wordId, phrases) => {
+  try {
+    phrases.forEach(phrase => {
+      // 转义单引号
+      const escapedPhrase = phrase.phrase.replace(/'/g, "''");
+      const escapedTranslation = phrase.translation.replace(/'/g, "''");
+      db.run(`
+        INSERT INTO word_phrases (word_id, phrase, translation, source)
+        VALUES (${wordId}, '${escapedPhrase}', '${escapedTranslation}', 'api')
+      `);
+    });
+    saveDatabase();
+    return true;
+  } catch (error) {
+    console.error('保存短语失败:', error);
+    return false;
   }
 });
 

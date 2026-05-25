@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频播放修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .log {
+            background-color: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .audio-info {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e8f4f8;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>音频播放修复测试</h1>
+    
+    <div class="test-section">
+        <h2>测试场景 1: 直接播放公共测试音频</h2>
+        <button onclick="testPublicAudio()">播放公共测试音频</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>测试场景 2: 模拟原有代码的播放流程</h2>
+        <button onclick="testOriginalFlow()">测试原有播放流程</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>测试场景 3: 模拟失败URL的回退机制</h2>
+        <button onclick="testFallbackMechanism()">测试回退机制</button>
+    </div>
+    
+    <div class="audio-info">
+        <h3>音频元素信息</h3>
+        <p>状态: <span id="audio-status">未初始化</span></p>
+        <p>时长: <span id="audio-duration">-</span></p>
+        <p>当前URL: <span id="audio-url">-</span></p>
+    </div>
+    
+    <div class="log">
+        <h3>日志记录</h3>
+        <div id="log-content"></div>
+    </div>
+    
+    <audio id="test-audio" controls>
+        您的浏览器不支持音频元素。
+    </audio>
+    
+    <script>
+        const audio = document.getElementById('test-audio');
+        const logContent = document.getElementById('log-content');
+        const audioStatus = document.getElementById('audio-status');
+        const audioDuration = document.getElementById('audio-duration');
+        const audioUrl = document.getElementById('audio-url');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-${type}`;
+            logEntry.innerHTML = `<strong>[${timestamp}] ${type.toUpperCase()}:</strong> ${message}`;
+            logContent.appendChild(logEntry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        function updateAudioInfo() {
+            audioStatus.textContent = audio.paused ? '暂停' : '播放中';
+            audioDuration.textContent = audio.duration ? audio.duration.toFixed(2) + ' 秒' : '-';
+            audioUrl.textContent = audio.src;
+        }
+        
+        // 添加音频事件监听器
+        audio.addEventListener('loadedmetadata', () => {
+            log(`音频加载成功，时长: ${audio.duration.toFixed(2)} 秒`);
+            updateAudioInfo();
+        });
+        
+        audio.addEventListener('error', (e) => {
+            log(`音频加载错误: ${e.target.error.message} (代码: ${e.target.error.code})`, 'error');
+            log(`当前失败的URL: ${audio.src}`, 'error');
+            updateAudioInfo();
+        });
+        
+        audio.addEventListener('play', () => {
+            log('音频开始播放');
+            updateAudioInfo();
+        });
+        
+        audio.addEventListener('pause', () => {
+            log('音频暂停');
+            updateAudioInfo();
+        });
+        
+        // 测试场景 1: 直接播放公共测试音频
+        function testPublicAudio() {
+            log('=== 开始测试场景 1: 直接播放公共测试音频 ===');
+            
+            // 使用修复后的可靠公共测试音频URL
+            const testUrl = 'https://file-examples.com/storage/feb872782665ef94396800f/2017/11/file_example_MP3_700KB.mp3';
+            
+            log(`尝试播放: ${testUrl}`);
+            
+            // 重置音频元素
+            audio.pause();
+            audio.currentTime = 0;
+            audio.src = '';
+            
+            // 设置新的音频源
+            audio.src = testUrl;
+            
+            // 尝试播放
+            try {
+                audio.play();
+                log('play() 调用成功，等待播放开始...');
+            } catch (error) {
+                log(`play() 调用失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试场景 2: 模拟原有代码的播放流程
+        async function testOriginalFlow() {
+            log('=== 开始测试场景 2: 模拟原有代码的播放流程 ===');
+            
+            // 模拟歌曲对象
+            const song = {
+                id: '1',
+                name: '测试歌曲',
+                artist: '测试歌手',
+                source: '测试源',
+                url: null // 模拟URL为空的情况
+            };
+            
+            log(`模拟播放歌曲: ${song.name} - ${song.artist}`);
+            
+            // 模拟获取URL失败的情况
+            let audioUrl = song.url;
+            if (!audioUrl) {
+                log('歌曲URL为空，模拟获取URL失败');
+                // 这里模拟getCppProgMusicUrl返回空或无效URL
+                audioUrl = null;
+            }
+            
+            // 检查URL是否有效
+            if (!audioUrl || audioUrl === null || typeof audioUrl !== 'string' || !(audioUrl.startsWith('http://') || audioUrl.startsWith('https://'))) {
+                log('URL无效，使用测试URL');
+                // 使用修复后的测试URL列表
+                const testUrls = [
+                    'https://file-examples.com/storage/feb872782665ef94396800f/2017/11/file_example_MP3_700KB.mp3',
+                    'https://file-examples.com/storage/feb872782665ef94396800f/2017/11/file_example_MP3_1MG.mp3'
+                ];
+                
+                // 随机选择一个测试URL
+                audioUrl = testUrls[Math.floor(Math.random() * testUrls.length)];
+                log(`使用随机测试URL: ${audioUrl}`);
+            }
+            
+            // 重置音频元素
+            audio.pause();
+            audio.currentTime = 0;
+            audio.src = '';
+            
+            // 设置新的音频源
+            audio.src = audioUrl;
+            
+            // 尝试播放
+            try {
+                await audio.play();
+                log('音频播放成功');
+            } catch (playError) {
+                log(`音频播放失败: ${playError.message}`, 'error');
+                
+                // 尝试备用URL
+                const knownGoodUrl = 'https://file-examples.com/storage/feb872782665ef94396800f/2017/11/file_example_MP3_700KB.mp3';
+                log(`尝试使用已知可用的备用URL: ${knownGoodUrl}`);
+                
+                audio.src = knownGoodUrl;
+                
+                try {
+                    await audio.play();
+                    log('使用备用URL播放成功');
+                } catch (secondPlayError) {
+                    log(`备用URL播放也失败: ${secondPlayError.message}`, 'error');
+                }
+            }
+        }
+        
+        // 测试场景 3: 模拟失败URL的回退机制
+        function testFallbackMechanism() {
+            log('=== 开始测试场景 3: 模拟失败URL的回退机制 ===');
+            
+            // 定义测试URL列表，包含一个无效URL和一个有效URL
+            const testUrls = [
+                'https://invalid-url-that-will-fail.example.com/invalid.mp3', // 无效URL
+                'https://file-examples.com/storage/feb872782665ef94396800f/2017/11/file_example_MP3_700KB.mp3' // 有效URL
+            ];
+            
+            let currentTestIndex = 0;
+            
+            // 定义错误处理函数
+            function handleAudioError(e) {
+                log(`测试URL ${currentTestIndex + 1} 失败: ${e.target.error.message}`, 'error');
+                
+                // 尝试下一个URL
+                currentTestIndex++;
+                if (currentTestIndex < testUrls.length) {
+                    log(`尝试下一个测试URL ${currentTestIndex + 1}: ${testUrls[currentTestIndex]}`);
+                    
+                    // 重置音频元素
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.src = '';
+                    
+                    // 设置新的音频源
+                    audio.src = testUrls[currentTestIndex];
+                    
+                    // 尝试播放
+                    audio.play().catch(error => {
+                        log(`play() 调用失败: ${error.message}`, 'error');
+                    });
+                } else {
+                    log('所有测试URL都失败了', 'error');
+                    // 移除错误监听器
+                    audio.removeEventListener('error', handleAudioError);
+                }
+            }
+            
+            // 添加错误监听器
+            audio.addEventListener('error', handleAudioError);
+            
+            // 开始测试第一个URL
+            log(`开始测试URL 1: ${testUrls[0]}`);
+            audio.src = testUrls[0];
+            
+            // 尝试播放
+            audio.play().catch(error => {
+                log(`play() 调用失败: ${error.message}`, 'error');
+            });
+        }
+        
+        // 初始化
+        log('测试页面已加载，音频元素已初始化');
+        updateAudioInfo();
+    </script>
+</body>
+</html>
