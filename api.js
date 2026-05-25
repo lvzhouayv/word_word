@@ -9,7 +9,7 @@ const API = {
       localStorage.setItem('wordbooks', JSON.stringify([]));
       localStorage.setItem('words', JSON.stringify([]));
       localStorage.setItem('review_settings', JSON.stringify({
-        error_days_map: '{"1":1,"2":1,"3":2,"4":3","5":3}',
+        error_days_map: '{"1":1,"2":1,"3":2,"4":3,"5":3}',
         use_custom_settings: 0
       }));
       localStorage.setItem('blur_settings', JSON.stringify({
