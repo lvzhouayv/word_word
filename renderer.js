@@ -1459,8 +1459,10 @@ async function addWord() {
 }
 
 function editWord(wordId) {
-  const word = currentWordbook ? null : null;
-  const words = document.querySelectorAll('.word-item');
+  if (!currentWordbook) {
+    alert('请先选择一个词书');
+    return;
+  }
 
   const allWords = api.getWords(currentWordbook.book_id, '', 'all', 'alphabet');
   const word = allWords.find(w => w.word_id === wordId);

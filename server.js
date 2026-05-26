@@ -26,7 +26,7 @@ const MIME_TYPES = {
   '.doc': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 };
 
-module.exports = (req, res) => {
+const handleRequest = (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   let pathname = parsedUrl.pathname;
 
@@ -53,3 +53,10 @@ module.exports = (req, res) => {
     }
   });
 };
+
+const PORT = process.env.PORT || 3000;
+const server = http.createServer(handleRequest);
+
+server.listen(PORT, () => {
+  console.log(`静态服务已启动：http://localhost:${PORT}`);
+});
