@@ -88,7 +88,9 @@ function selectWordbookFromBook(book) {
     book_id: book.book_id,
     book_name: book.book_name
   };
-  
+
+  localStorage.setItem('current_wordbook_id', book.book_id.toString());
+
   // 更新当前词书显示
   updateCurrentWordbookDisplay(book);
   
@@ -2660,7 +2662,7 @@ async function createWordbook() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  api.init();
+  await api.init();
   loadWordbooks();
   initEventListeners();
   await loadBlurSettings();
@@ -2671,6 +2673,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateBlurEffect();
   applyFontColorSettings();
   initFullscreenMode();
+
+  const savedCurrentBookId = localStorage.getItem('current_wordbook_id');
+  if (savedCurrentBookId) {
+    const wordbooks = api.getWordbooks();
+    const savedBook = wordbooks.find(b => b.book_id === parseInt(savedCurrentBookId));
+    if (savedBook) {
+      currentWordbook = {
+        book_id: savedBook.book_id,
+        book_name: savedBook.book_name
+      };
+      updateCurrentWordbookDisplay(savedBook);
+    }
+  } else {
+    const wordbooks = api.getWordbooks();
+    if (wordbooks.length > 0) {
+      const defaultBook = wordbooks[0];
+      currentWordbook = {
+        book_id: defaultBook.book_id,
+        book_name: defaultBook.book_name
+      };
+      localStorage.setItem('current_wordbook_id', defaultBook.book_id.toString());
+      updateCurrentWordbookDisplay(defaultBook);
+    }
+  }
 });
 
 function initFullscreenMode() {

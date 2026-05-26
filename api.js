@@ -4,7 +4,7 @@ const API = {
     this.loadData();
   },
 
-  initDatabase() {
+  async initDatabase() {
     if (!localStorage.getItem('wordword_initialized')) {
       localStorage.setItem('wordbooks', JSON.stringify([]));
       localStorage.setItem('words', JSON.stringify([]));
@@ -30,7 +30,57 @@ const API = {
       }));
       localStorage.setItem('music_favorites', JSON.stringify([]));
       localStorage.setItem('music_history', JSON.stringify([]));
+
+      await this.loadDefaultWordbook();
+
       localStorage.setItem('wordword_initialized', 'true');
+    }
+  },
+
+  async loadDefaultWordbook() {
+    try {
+      const response = await fetch('default-words.json');
+      if (!response.ok) {
+        console.error('加载默认单词本失败:', response.status);
+        return;
+      }
+      const defaultWords = await response.json();
+
+      const bookId = Date.now();
+      const defaultBookbook = {
+        book_id: bookId,
+        name: '2027考研英语红宝书',
+        word_count: defaultWords.length,
+        created_at: bookId
+      };
+
+      const words = defaultWords.map((item, idx) => ({
+        word_id: bookId + idx + 1,
+        book_id: bookId,
+        english: item.word,
+        chinese: item.meaning,
+        mastery_status: 0,
+        review_count: 0,
+        last_reviewed: null,
+        created_at: bookId + idx + 1,
+        learned_today: false,
+        learned_date: null
+      }));
+
+      const currentBookId = parseInt(localStorage.getItem('current_wordbook_id')) || bookId;
+      localStorage.setItem('current_wordbook_id', currentBookId.toString());
+
+      const wordbooks = JSON.parse(localStorage.getItem('wordbooks') || '[]');
+      wordbooks.push(defaultBookbook);
+      localStorage.setItem('wordbooks', JSON.stringify(wordbooks));
+
+      const allWords = JSON.parse(localStorage.getItem('words') || '[]');
+      allWords.push(...words);
+      localStorage.setItem('words', JSON.stringify(allWords));
+
+      console.log('默认单词本加载成功:', defaultWords.length, '个单词');
+    } catch (error) {
+      console.error('加载默认单词本失败:', error);
     }
   },
 
